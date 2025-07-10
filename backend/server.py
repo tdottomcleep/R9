@@ -841,14 +841,16 @@ async def create_session(file: UploadFile = File(...)):
         except Exception as e:
             raise HTTPException(status_code=400, detail=f"Invalid CSV file: {str(e)}")
         
-        # Create preview data
+        # Create preview data with proper type conversion
         preview = {
             "columns": df.columns.tolist(),
-            "shape": df.shape,
+            "shape": [int(df.shape[0]), int(df.shape[1])],  # Convert numpy ints to Python ints
             "head": df.head().to_dict('records'),
             "dtypes": df.dtypes.astype(str).to_dict(),
-            "null_counts": df.isnull().sum().to_dict(),
-            "describe": df.describe().to_dict() if len(df.select_dtypes(include=[np.number]).columns) > 0 else {}
+            "null_counts": {k: int(v) for k, v in df.isnull().sum().to_dict().items()},  # Convert numpy ints to Python ints
+            "describe": {k: {k2: float(v2) if isinstance(v2, (np.integer, np.floating)) else v2 
+                           for k2, v2 in v.items()} for k, v in df.describe().to_dict().items()} 
+                       if len(df.select_dtypes(include=[np.number]).columns) > 0 else {}
         }
         
         # Create session
