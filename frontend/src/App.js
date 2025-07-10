@@ -492,57 +492,177 @@ const App = () => {
 
     return (
       <div className="h-full overflow-y-auto p-4 space-y-4">
-        <h3 className="font-semibold text-gray-700 border-b pb-2">Execution Results</h3>
-        
-        {executionResult.success ? (
-          <div className="text-green-600 text-sm">✅ Execution successful</div>
-        ) : (
-          <div className="text-red-600 text-sm">❌ Execution failed</div>
-        )}
-        
-        {executionResult.output && (
-          <div>
-            <h4 className="font-medium text-gray-700 mb-2">Output:</h4>
-            <pre className="bg-gray-100 p-3 rounded text-sm overflow-x-auto">
-              {executionResult.output}
-            </pre>
+        <div className="flex items-center justify-between border-b pb-3">
+          <h3 className="font-semibold text-gray-700">Execution Results</h3>
+          <div className="flex items-center space-x-2">
+            {executionResult.overall_success ? (
+              <span className="text-green-600 text-sm bg-green-50 px-2 py-1 rounded">
+                ✅ Success
+              </span>
+            ) : (
+              <span className="text-red-600 text-sm bg-red-50 px-2 py-1 rounded">
+                ❌ Failed
+              </span>
+            )}
+            {executionResult.total_sections && (
+              <span className="text-gray-500 text-sm bg-gray-100 px-2 py-1 rounded">
+                {executionResult.total_sections} sections
+              </span>
+            )}
           </div>
-        )}
+        </div>
         
-        {executionResult.error && (
-          <div>
-            <h4 className="font-medium text-red-700 mb-2">Error:</h4>
-            <pre className="bg-red-50 p-3 rounded text-sm overflow-x-auto text-red-700">
-              {executionResult.error}
-            </pre>
-          </div>
-        )}
-        
-        {executionResult.plots && executionResult.plots.length > 0 && (
-          <div>
-            <h4 className="font-medium text-gray-700 mb-2">Visualizations:</h4>
-            {executionResult.plots.map((plot, index) => (
-              <div key={index} className="mb-4">
-                {plot.type === 'matplotlib' ? (
-                  <img 
-                    src={`data:image/png;base64,${plot.data}`} 
-                    alt={`Plot ${index + 1}`}
-                    className="max-w-full rounded shadow-lg"
-                  />
-                ) : plot.type === 'plotly' ? (
-                  <div 
-                    dangerouslySetInnerHTML={{ __html: plot.html }}
-                    className="plotly-container"
-                  />
-                ) : (
-                  <img 
-                    src={`data:image/png;base64,${plot}`} 
-                    alt={`Plot ${index + 1}`}
-                    className="max-w-full rounded shadow-lg"
-                  />
-                )}
+        {/* Julius AI Style Sectioned Results */}
+        {executionResult.sections && executionResult.sections.length > 0 ? (
+          <div className="space-y-4">
+            {executionResult.sections.map((section, index) => (
+              <div key={section.id || index} className="bg-white border border-gray-200 rounded-lg shadow-sm">
+                {/* Section Header */}
+                <div className="bg-gray-50 border-b border-gray-200 px-4 py-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <div className={`w-3 h-3 rounded-full ${
+                        section.section_type === 'descriptive' ? 'bg-blue-500' :
+                        section.section_type === 'statistical_test' ? 'bg-green-500' :
+                        section.section_type === 'visualization' ? 'bg-purple-500' :
+                        section.section_type === 'model' ? 'bg-orange-500' :
+                        'bg-gray-500'
+                      }`}></div>
+                      <h4 className="text-sm font-medium text-gray-700">{section.title}</h4>
+                      <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded capitalize">
+                        {section.section_type?.replace('_', ' ')}
+                      </span>
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      {section.success ? '✅' : '❌'}
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Section Content */}
+                <div className="p-4">
+                  {/* Code */}
+                  <div className="mb-4">
+                    <div className="bg-gray-50 border border-gray-200 rounded-lg overflow-hidden">
+                      <div className="bg-gray-100 px-3 py-2 border-b border-gray-200">
+                        <span className="text-xs font-medium text-gray-600">Code</span>
+                      </div>
+                      <div className="p-3 max-h-60 overflow-auto">
+                        <pre className="text-sm text-gray-800 font-mono whitespace-pre-wrap">
+                          {section.code}
+                        </pre>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Output */}
+                  {section.output && (
+                    <div className="mb-4">
+                      <div className="bg-gray-50 border border-gray-200 rounded-lg overflow-hidden">
+                        <div className="bg-gray-100 px-3 py-2 border-b border-gray-200">
+                          <span className="text-xs font-medium text-gray-600">Output</span>
+                        </div>
+                        <div className="p-3 max-h-60 overflow-auto">
+                          <pre className="text-sm text-gray-800 whitespace-pre-wrap">
+                            {section.output}
+                          </pre>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Error */}
+                  {section.error && (
+                    <div className="mb-4">
+                      <div className="bg-red-50 border border-red-200 rounded-lg overflow-hidden">
+                        <div className="bg-red-100 px-3 py-2 border-b border-red-200">
+                          <span className="text-xs font-medium text-red-600">Error</span>
+                        </div>
+                        <div className="p-3 max-h-60 overflow-auto">
+                          <pre className="text-sm text-red-700 whitespace-pre-wrap">
+                            {section.error}
+                          </pre>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Charts */}
+                  {section.charts && section.charts.length > 0 && (
+                    <div className="mb-4">
+                      <h5 className="text-sm font-medium text-gray-700 mb-2">Visualizations</h5>
+                      <div className="grid grid-cols-1 gap-4">
+                        {section.charts.map((chart, chartIndex) => (
+                          <div key={chartIndex} className="bg-white border border-gray-200 rounded-lg p-4">
+                            {chart.type === 'matplotlib' && chart.data ? (
+                              <img 
+                                src={`data:image/png;base64,${chart.data}`} 
+                                alt={chart.title || `Chart ${chartIndex + 1}`}
+                                className="max-w-full rounded shadow-sm"
+                              />
+                            ) : chart.type === 'plotly' && chart.html ? (
+                              <div 
+                                dangerouslySetInnerHTML={{ __html: chart.html }}
+                                className="plotly-container"
+                              />
+                            ) : (
+                              <p className="text-gray-500 text-sm">Chart data not available</p>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Tables */}
+                  {section.tables && section.tables.length > 0 && (
+                    <div className="mb-4">
+                      <h5 className="text-sm font-medium text-gray-700 mb-2">Tables</h5>
+                      <div className="space-y-4">
+                        {section.tables.map((table, tableIndex) => (
+                          <div key={tableIndex} className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+                            <div className="bg-gray-50 px-3 py-2 border-b border-gray-200">
+                              <span className="text-xs font-medium text-gray-600">
+                                {table.title || `Table ${tableIndex + 1}`}
+                              </span>
+                            </div>
+                            <div className="p-3 overflow-auto">
+                              <pre className="text-sm text-gray-800 whitespace-pre-wrap">
+                                {table.content}
+                              </pre>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Metadata */}
+                  {section.metadata && Object.keys(section.metadata).length > 0 && (
+                    <div className="text-xs text-gray-500 border-t pt-3">
+                      <div className="flex flex-wrap gap-4">
+                        {section.metadata.execution_time && (
+                          <span>⏱️ {section.metadata.execution_time}s</span>
+                        )}
+                        {section.metadata.complexity && (
+                          <span>📊 {section.metadata.complexity}</span>
+                        )}
+                        {section.metadata.context && (
+                          <span>🏥 {section.metadata.context}</span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             ))}
+          </div>
+        ) : (
+          <div className="text-center py-8 text-gray-500">
+            <svg className="mx-auto h-8 w-8 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            <p className="text-sm">No execution results yet</p>
           </div>
         )}
       </div>
