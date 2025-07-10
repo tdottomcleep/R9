@@ -346,7 +346,7 @@ invalid_syntax_here =
                     print("❌ Analysis suggestions response is empty")
                     return False
             else:
-                error_detail = result.json().get('detail', '')
+                error_detail = response.json().get('detail', '')
                 if 'API key not valid' in error_detail or 'AuthenticationError' in error_detail:
                     print("✅ Analysis suggestions endpoint working - API key validation functioning")
                     print("   (Test API key rejected as expected)")
