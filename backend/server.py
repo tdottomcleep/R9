@@ -84,7 +84,7 @@ class PythonExecutionRequest(BaseModel):
 
 class AnalysisResult(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    session_id: str
+    session_id: Optional[str] = None
     analysis_type: str
     variables: List[str]
     test_statistic: Optional[float] = None
