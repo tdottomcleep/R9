@@ -167,67 +167,195 @@ class AnalysisClassifier:
     
     @staticmethod
     def extract_tables_from_output(output: str, execution_globals: dict) -> List[Dict]:
-        """Extract table data from execution output and globals"""
+        """Enhanced table extraction with robust error handling and healthcare focus"""
         tables = []
         
-        # Look for pandas DataFrames in output
-        lines = output.split('\n')
-        current_table = []
-        in_table = False
-        
-        for line in lines:
-            # Detect DataFrame-like output
-            if ('|' in line and len(line.split('|')) > 2) or (line.strip() and line.strip()[0].isdigit()):
-                if not in_table:
-                    in_table = True
-                    current_table = []
-                current_table.append(line)
-            else:
-                if in_table and current_table:
-                    # Process completed table
-                    table_text = '\n'.join(current_table)
-                    if len(current_table) > 1:  # Valid table
+        try:
+            # Look for pandas DataFrames in output with better pattern matching
+            lines = output.split('\n')
+            current_table = []
+            in_table = False
+            table_title = "Data Table"
+            
+            for i, line in enumerate(lines):
+                # Detect DataFrame-like output with enhanced patterns
+                if (('|' in line and len(line.split('|')) > 2) or 
+                    (line.strip() and line.strip()[0].isdigit()) or
+                    ('  ' in line and any(word in line.lower() for word in ['mean', 'std', 'count', 'min', 'max', '25%', '50%', '75%']))):
+                    
+                    if not in_table:
+                        in_table = True
+                        current_table = []
+                        # Look for table title in previous lines
+                        for j in range(max(0, i-3), i):
+                            if lines[j].strip() and not lines[j].startswith(' '):
+                                table_title = lines[j].strip()[:50]  # Max 50 chars
+                                break
+                    
+                    current_table.append(line)
+                else:
+                    if in_table and current_table:
+                        # Process completed table
+                        table_text = '\n'.join(current_table)
+                        if len(current_table) > 1:  # Valid table
+                            tables.append({
+                                'type': 'dataframe',
+                                'title': table_title,
+                                'content': table_text,
+                                'rows': len(current_table) - 1,  # Exclude header
+                                'clickable': True,
+                                'healthcare_context': AnalysisClassifier._detect_healthcare_context(table_text)
+                            })
+                        in_table = False
+                        current_table = []
+                        table_title = "Data Table"
+            
+            # Process any remaining table
+            if in_table and current_table:
+                table_text = '\n'.join(current_table)
+                if len(current_table) > 1:
+                    tables.append({
+                        'type': 'dataframe',
+                        'title': table_title,
+                        'content': table_text,
+                        'rows': len(current_table) - 1,
+                        'clickable': True,
+                        'healthcare_context': AnalysisClassifier._detect_healthcare_context(table_text)
+                    })
+            
+            # Check for DataFrames in execution globals with enhanced error handling
+            for var_name, var_value in execution_globals.items():
+                try:
+                    if isinstance(var_value, pd.DataFrame) and not var_name.startswith('_'):
+                        # Generate healthcare-specific title
+                        title = AnalysisClassifier._generate_healthcare_table_title(var_name, var_value)
+                        
                         tables.append({
                             'type': 'dataframe',
-                            'title': 'Data Table',
-                            'content': table_text,
-                            'rows': len(current_table) - 1,  # Exclude header
-                            'clickable': True
+                            'title': title,
+                            'content': var_value.to_string(),
+                            'data': var_value.head(10).to_dict('records'),  # First 10 rows
+                            'shape': var_value.shape,
+                            'clickable': True,
+                            'healthcare_context': AnalysisClassifier._detect_healthcare_context(var_value.to_string()),
+                            'summary_stats': AnalysisClassifier._generate_table_summary(var_value)
                         })
-                    in_table = False
-                    current_table = []
-        
-        # Check for DataFrames in execution globals
-        for var_name, var_value in execution_globals.items():
-            if isinstance(var_value, pd.DataFrame) and not var_name.startswith('_'):
-                tables.append({
-                    'type': 'dataframe',
-                    'title': f'Table: {var_name}',
-                    'content': var_value.to_string(),
-                    'data': var_value.head(10).to_dict('records'),  # First 10 rows
-                    'shape': var_value.shape,
-                    'clickable': True
-                })
+                except Exception as e:
+                    # Log error but continue processing other tables
+                    print(f"Error processing DataFrame {var_name}: {e}")
+                    continue
+            
+            # Look for statistical results in output
+            tables.extend(AnalysisClassifier._extract_statistical_results(output))
+            
+        except Exception as e:
+            print(f"Error in table extraction: {e}")
+            # Return empty list if extraction fails completely
+            return []
         
         return tables
     
     @staticmethod
+    def _detect_healthcare_context(text: str) -> str:
+        """Detect healthcare context from table content"""
+        text_lower = text.lower()
+        
+        if any(term in text_lower for term in ['patient', 'clinical', 'medical', 'health', 'treatment', 'diagnosis']):
+            return 'clinical_data'
+        elif any(term in text_lower for term in ['ttest', 'pvalue', 'confidence', 'significance', 'chi2', 'anova']):
+            return 'statistical_results'
+        elif any(term in text_lower for term in ['survival', 'hazard', 'kaplan', 'meier']):
+            return 'survival_analysis'
+        elif any(term in text_lower for term in ['roc', 'auc', 'sensitivity', 'specificity']):
+            return 'diagnostic_metrics'
+        else:
+            return 'general_data'
+    
+    @staticmethod
+    def _generate_healthcare_table_title(var_name: str, df: pd.DataFrame) -> str:
+        """Generate healthcare-specific table titles"""
+        # Check column names for healthcare context
+        columns = [col.lower() for col in df.columns]
+        
+        if any(term in ' '.join(columns) for term in ['patient', 'clinical', 'medical']):
+            return f"Clinical Data: {var_name}"
+        elif any(term in ' '.join(columns) for term in ['test', 'pvalue', 'statistic']):
+            return f"Statistical Results: {var_name}"
+        elif any(term in ' '.join(columns) for term in ['survival', 'hazard', 'time']):
+            return f"Survival Analysis: {var_name}"
+        else:
+            return f"Healthcare Data: {var_name}"
+    
+    @staticmethod
+    def _generate_table_summary(df: pd.DataFrame) -> dict:
+        """Generate summary statistics for healthcare tables"""
+        try:
+            summary = {
+                'total_rows': len(df),
+                'total_columns': len(df.columns),
+                'numeric_columns': len(df.select_dtypes(include=[np.number]).columns),
+                'categorical_columns': len(df.select_dtypes(include=['object']).columns),
+                'missing_values': df.isnull().sum().sum(),
+                'completion_rate': round((1 - df.isnull().sum().sum() / (len(df) * len(df.columns))) * 100, 2)
+            }
+            return summary
+        except Exception:
+            return {}
+    
+    @staticmethod
+    def _extract_statistical_results(output: str) -> List[Dict]:
+        """Extract statistical test results from output"""
+        results = []
+        lines = output.split('\n')
+        
+        for line in lines:
+            line_lower = line.lower()
+            # Look for statistical test results
+            if any(pattern in line_lower for pattern in ['t-test', 'chi-square', 'anova', 'p-value', 'confidence interval']):
+                results.append({
+                    'type': 'statistical_result',
+                    'title': 'Statistical Test Result',
+                    'content': line.strip(),
+                    'clickable': False,
+                    'healthcare_context': 'statistical_results'
+                })
+        
+        return results
+    
+    @staticmethod
     def determine_chart_type(code: str, output: str) -> str:
-        """Determine appropriate chart type based on code and output"""
+        """Enhanced chart type determination with healthcare-specific charts"""
         code_lower = code.lower()
         
-        if any(pattern in code_lower for pattern in ['pie', 'value_counts']):
+        # Healthcare-specific chart types
+        if any(pattern in code_lower for pattern in ['forest_plot', 'forest']):
+            return 'forest_plot'
+        elif any(pattern in code_lower for pattern in ['survival_plot', 'kaplan_meier', 'survival']):
+            return 'survival_plot'
+        elif any(pattern in code_lower for pattern in ['roc_curve', 'roc']):
+            return 'roc_curve'
+        elif any(pattern in code_lower for pattern in ['funnel_plot', 'funnel']):
+            return 'funnel_plot'
+        elif any(pattern in code_lower for pattern in ['bland_altman', 'bland']):
+            return 'bland_altman'
+        
+        # Standard chart types
+        elif any(pattern in code_lower for pattern in ['pie', 'value_counts']):
             return 'pie'
-        elif any(pattern in code_lower for pattern in ['hist', 'distribution']):
+        elif any(pattern in code_lower for pattern in ['hist', 'distribution', 'histogram']):
             return 'histogram'
-        elif any(pattern in code_lower for pattern in ['bar', 'count']):
+        elif any(pattern in code_lower for pattern in ['bar', 'count', 'barplot']):
             return 'bar'
-        elif any(pattern in code_lower for pattern in ['scatter', 'correlation']):
+        elif any(pattern in code_lower for pattern in ['scatter', 'correlation', 'scatterplot']):
             return 'scatter'
-        elif any(pattern in code_lower for pattern in ['box', 'quartile']):
+        elif any(pattern in code_lower for pattern in ['box', 'quartile', 'boxplot']):
             return 'box'
-        elif any(pattern in code_lower for pattern in ['line', 'time', 'trend']):
+        elif any(pattern in code_lower for pattern in ['violin', 'violinplot']):
+            return 'violin'
+        elif any(pattern in code_lower for pattern in ['line', 'time', 'trend', 'lineplot']):
             return 'line'
+        elif any(pattern in code_lower for pattern in ['heatmap', 'correlation_matrix']):
+            return 'heatmap'
         else:
             return 'bar'  # Default
 
