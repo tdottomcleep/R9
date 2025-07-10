@@ -179,34 +179,73 @@ const App = () => {
   const DataPreview = ({ session }) => {
     if (!session?.csv_preview) return null;
 
-    const { columns, shape, head, dtypes, null_counts } = session.csv_preview;
+    const { columns, shape, head, dtypes, null_counts, describe } = session.csv_preview;
+
+    // Analyze data types
+    const numericCols = columns?.filter(col => 
+      dtypes?.[col] && (dtypes[col].includes('int') || dtypes[col].includes('float'))
+    ) || [];
+    const categoricalCols = columns?.filter(col => 
+      dtypes?.[col] && dtypes[col].includes('object')
+    ) || [];
 
     return (
-      <div className="bg-gray-50 p-4 rounded-lg mb-4">
-        <h3 className="font-semibold text-gray-700 mb-2">Data Overview</h3>
-        <div className="text-sm text-gray-600 space-y-1">
-          <p><strong>Shape:</strong> {shape?.[0]} rows × {shape?.[1]} columns</p>
-          <p><strong>Columns:</strong> {columns?.join(', ')}</p>
+      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-lg mb-4 border border-blue-200">
+        <h3 className="font-semibold text-gray-800 mb-3 flex items-center">
+          <svg className="w-5 h-5 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+          </svg>
+          Dataset Overview
+        </h3>
+        
+        <div className="grid grid-cols-2 gap-4 mb-4">
+          <div className="bg-white p-3 rounded border">
+            <p className="text-sm font-medium text-gray-700">Dataset Size</p>
+            <p className="text-lg font-semibold text-blue-600">{shape?.[0]} × {shape?.[1]}</p>
+            <p className="text-xs text-gray-500">rows × columns</p>
+          </div>
+          <div className="bg-white p-3 rounded border">
+            <p className="text-sm font-medium text-gray-700">Data Quality</p>
+            <p className="text-lg font-semibold text-green-600">
+              {null_counts ? Math.round((1 - Object.values(null_counts).reduce((a, b) => a + b, 0) / (shape?.[0] * shape?.[1])) * 100) : 100}%
+            </p>
+            <p className="text-xs text-gray-500">completeness</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4 mb-4">
+          <div className="bg-white p-3 rounded border">
+            <p className="text-sm font-medium text-gray-700">Numeric Variables</p>
+            <p className="text-lg font-semibold text-purple-600">{numericCols.length}</p>
+            <p className="text-xs text-gray-500">{numericCols.slice(0, 3).join(', ')}{numericCols.length > 3 ? '...' : ''}</p>
+          </div>
+          <div className="bg-white p-3 rounded border">
+            <p className="text-sm font-medium text-gray-700">Categorical Variables</p>
+            <p className="text-lg font-semibold text-orange-600">{categoricalCols.length}</p>
+            <p className="text-xs text-gray-500">{categoricalCols.slice(0, 3).join(', ')}{categoricalCols.length > 3 ? '...' : ''}</p>
+          </div>
         </div>
         
         {head && head.length > 0 && (
-          <div className="mt-3">
-            <h4 className="font-medium text-gray-700 mb-2">Sample Data:</h4>
+          <div className="bg-white p-3 rounded border">
+            <h4 className="font-medium text-gray-700 mb-2">Sample Data Preview</h4>
             <div className="overflow-x-auto">
               <table className="min-w-full text-xs">
                 <thead>
                   <tr className="bg-gray-100">
-                    {columns?.map(col => (
-                      <th key={col} className="px-2 py-1 text-left">{col}</th>
+                    {columns?.slice(0, 6).map(col => (
+                      <th key={col} className="px-2 py-1 text-left font-medium">{col}</th>
                     ))}
+                    {columns?.length > 6 && <th className="px-2 py-1 text-left">...</th>}
                   </tr>
                 </thead>
                 <tbody>
                   {head.slice(0, 3).map((row, idx) => (
                     <tr key={idx} className="border-b">
-                      {columns?.map(col => (
+                      {columns?.slice(0, 6).map(col => (
                         <td key={col} className="px-2 py-1">{row[col]}</td>
                       ))}
+                      {columns?.length > 6 && <td className="px-2 py-1">...</td>}
                     </tr>
                   ))}
                 </tbody>
