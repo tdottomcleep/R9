@@ -396,26 +396,49 @@ async def suggest_analysis(session_id: str, gemini_api_key: str = Form(...)):
         
         csv_preview = session.get('csv_preview', {})
         
-        # Ask LLM for analysis suggestions
+        # Enhanced analysis suggestions
+        columns = csv_preview.get('columns', [])
+        dtypes = csv_preview.get('dtypes', {})
+        shape = csv_preview.get('shape', [0, 0])
+        sample_data = csv_preview.get('head', [])
+        
+        # Analyze data structure
+        numeric_cols = [col for col, dtype in dtypes.items() if 'int' in str(dtype) or 'float' in str(dtype)]
+        categorical_cols = [col for col, dtype in dtypes.items() if 'object' in str(dtype)]
+        
         context = f"""
-        You are an AI Data Scientist. Analyze this dataset and suggest appropriate statistical analyses.
+        You are an Expert Biostatistician analyzing a medical research dataset.
         
-        Dataset: {session['file_name']}
-        Shape: {csv_preview.get('shape', 'Unknown')}
-        Columns: {csv_preview.get('columns', [])}
-        Data Types: {csv_preview.get('dtypes', {})}
+        DATASET: {session['file_name']}
+        STRUCTURE: {shape[0]} subjects, {shape[1]} variables
         
-        Sample Data:
-        {csv_preview.get('head', [])}
+        VARIABLES IDENTIFIED:
+        Numeric Variables ({len(numeric_cols)}): {numeric_cols}
+        Categorical Variables ({len(categorical_cols)}): {categorical_cols}
         
-        Please suggest 3-5 specific statistical analyses that would be appropriate for this medical/research data.
-        For each suggestion, provide:
-        1. Analysis name
-        2. Brief description
-        3. Which columns to use
-        4. What insights it would provide
+        SAMPLE DATA:
+        {sample_data[:5]}
         
-        Format your response as a JSON list of suggestions.
+        TASK: Provide 5-7 professional statistical analysis recommendations that would be appropriate for this dataset.
+        
+        For each analysis, provide:
+        1. **Analysis Name**: Professional statistical test name
+        2. **Purpose**: What research question it answers
+        3. **Variables**: Specific columns to use (be precise)
+        4. **Method**: Statistical approach (parametric/non-parametric)
+        5. **Visualization**: Appropriate plot type
+        6. **Clinical Relevance**: Why this analysis matters for medical research
+        
+        Consider these analysis categories:
+        - Descriptive Statistics & Data Exploration
+        - Group Comparisons (t-tests, ANOVA, chi-square)
+        - Correlation & Regression Analysis
+        - Survival Analysis (if time-to-event data present)
+        - Multivariate Analysis
+        - Advanced Visualizations (forest plots, survival curves)
+        
+        Format your response as a structured analysis plan that a biostatistician would create.
+        Focus on clinically meaningful analyses that would be published in medical journals.
         """
         
         chat = LlmChat(
