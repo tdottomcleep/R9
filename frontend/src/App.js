@@ -31,6 +31,7 @@ const App = () => {
     if (currentSession) {
       fetchMessages(currentSession.id);
       fetchAnalysisHistory(currentSession.id);
+      fetchStructuredAnalyses(currentSession.id);
     }
   }, [currentSession]);
 
