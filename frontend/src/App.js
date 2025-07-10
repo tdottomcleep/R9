@@ -144,6 +144,15 @@ const App = () => {
     }
   };
 
+  const fetchStructuredAnalyses = async (sessionId) => {
+    try {
+      const response = await axios.get(`${API}/sessions/${sessionId}/structured-analyses`);
+      setStructuredAnalyses(response.data);
+    } catch (error) {
+      console.error('Error fetching structured analyses:', error);
+    }
+  };
+
   const handleExecuteCode = async (code) => {
     if (!currentSession || !geminiApiKey) return;
 
