@@ -82,6 +82,19 @@ class PythonExecutionRequest(BaseModel):
     code: str
     gemini_api_key: str
 
+class AnalysisResult(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    session_id: str
+    analysis_type: str
+    variables: List[str]
+    test_statistic: Optional[float] = None
+    p_value: Optional[float] = None
+    effect_size: Optional[float] = None
+    confidence_interval: Optional[List[float]] = None
+    interpretation: str
+    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    raw_results: Optional[Dict] = None
+
 # API Routes
 @api_router.get("/")
 async def root():
