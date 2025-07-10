@@ -264,6 +264,70 @@ const App = () => {
     );
   };
 
+  const AnalysisHistoryPanel = () => {
+    return (
+      <div className="h-full overflow-y-auto p-4 space-y-4">
+        <h3 className="font-semibold text-gray-700 border-b pb-2">Analysis History</h3>
+        
+        {analysisHistory.length === 0 ? (
+          <div className="text-center py-8 text-gray-500">
+            <svg className="mx-auto h-8 w-8 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+            </svg>
+            <p className="text-sm">No statistical analyses performed yet</p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {analysisHistory.map((analysis, index) => (
+              <div key={analysis.id} className="bg-white border rounded-lg p-4 shadow-sm">
+                <div className="flex items-start justify-between mb-2">
+                  <h4 className="font-medium text-gray-800">{analysis.analysis_type}</h4>
+                  <span className="text-xs text-gray-500">
+                    {new Date(analysis.timestamp).toLocaleString()}
+                  </span>
+                </div>
+                
+                <div className="text-sm text-gray-600 mb-2">
+                  <strong>Variables:</strong> {analysis.variables.join(', ')}
+                </div>
+                
+                {analysis.test_statistic && (
+                  <div className="bg-gray-50 p-3 rounded text-sm">
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <span className="font-medium">Test Statistic:</span> {analysis.test_statistic?.toFixed(4)}
+                      </div>
+                      <div>
+                        <span className="font-medium">P-value:</span> 
+                        <span className={analysis.p_value < 0.05 ? 'text-red-600 font-medium' : 'text-gray-700'}>
+                          {analysis.p_value?.toFixed(4)}
+                        </span>
+                      </div>
+                      {analysis.effect_size && (
+                        <div>
+                          <span className="font-medium">Effect Size:</span> {analysis.effect_size?.toFixed(4)}
+                        </div>
+                      )}
+                      {analysis.confidence_interval && (
+                        <div>
+                          <span className="font-medium">95% CI:</span> [{analysis.confidence_interval[0]?.toFixed(4)}, {analysis.confidence_interval[1]?.toFixed(4)}]
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+                
+                <div className="mt-2 text-sm">
+                  <span className="font-medium">Interpretation:</span> {analysis.interpretation}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   const ExecutionPanel = () => {
     if (!executionResult) return null;
 
