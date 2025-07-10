@@ -39,3 +39,4 @@ altair>=5.0.0
 pygal>=3.0.0
 forestplot>=0.3.0
 pyparsing>=3.0.0
+cycler>=0.12.0
