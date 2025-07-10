@@ -167,6 +167,9 @@ backend:
       - working: true
         agent: "testing"
         comment: "✅ POST-PYPARSING FIX VERIFIED - Gemini LLM integration fully functional. POST /sessions/{id}/chat properly validates API keys (rejects test keys as expected), stores user/assistant messages in MongoDB, and provides sophisticated biostatistical context for medical data analysis."
+      - working: true
+        agent: "testing"
+        comment: "✅ UPDATED GEMINI-2.5-FLASH MODEL VERIFIED - Comprehensive testing of updated Gemini integration completed successfully. MAJOR FINDINGS: ✅ Model Update: Successfully using gemini-2.5-flash instead of gemini-2.5-pro-preview-05-06 for better rate limits and performance. ✅ Improved Error Handling: Proper 400/429 error responses with user-friendly messages mentioning Flash model benefits. ✅ API Key Validation: Robust validation rejecting invalid keys with clear error messages. ✅ Chat Endpoint: POST /sessions/{id}/chat working perfectly with new model, storing messages properly in MongoDB. ✅ Rate Limit Handling: Proper error messages guide users to Flash model for better performance. Backend logs confirm successful API calls to gemini-2.5-flash model. Integration is production-ready with improved reliability."
         
   - task: "Python Code Execution Sandbox"
     implemented: true
