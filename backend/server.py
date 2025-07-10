@@ -473,34 +473,56 @@ class JuliusStyleExecutor:
         return sections
     
     def _execute_single_section(self, code: str, title: str, order: int) -> AnalysisSection:
-        """Execute a single code section"""
+        """Execute a single code section with enhanced error handling"""
         section_type, _ = AnalysisClassifier.classify_code_section(code)
         
         # Capture output
         output_buffer = io.StringIO()
         old_stdout = sys.stdout
+        execution_start_time = datetime.utcnow()
         
         try:
             sys.stdout = output_buffer
             
-            # Execute code
+            # Clear any existing plots to avoid conflicts
+            plt.clf()
+            plt.close('all')
+            
+            # Execute code with timeout protection
             exec(code, self.execution_globals)
             
             # Get output
             output = output_buffer.getvalue()
             
-            # Extract tables
-            tables = AnalysisClassifier.extract_tables_from_output(output, self.execution_globals)
+            # Extract tables with error handling
+            tables = []
+            try:
+                tables = AnalysisClassifier.extract_tables_from_output(output, self.execution_globals)
+            except Exception as table_error:
+                print(f"Warning: Table extraction failed: {table_error}")
+                tables = []
             
-            # Handle plots
-            charts = self._extract_charts(code)
+            # Handle plots with enhanced error handling
+            charts = []
+            try:
+                charts = self._extract_charts_robust(code)
+            except Exception as chart_error:
+                print(f"Warning: Chart extraction failed: {chart_error}")
+                charts = []
             
-            # Create metadata
+            # Calculate execution time
+            execution_time = (datetime.utcnow() - execution_start_time).total_seconds()
+            
+            # Create enhanced metadata
             metadata = {
                 'lines_of_code': len(code.split('\n')),
                 'has_output': bool(output.strip()),
                 'chart_type': AnalysisClassifier.determine_chart_type(code, output),
-                'variables_used': self._extract_variables_used(code)
+                'variables_used': self._extract_variables_used(code),
+                'execution_time': execution_time,
+                'section_complexity': self._calculate_section_complexity(code),
+                'healthcare_context': self._detect_healthcare_context(code, output),
+                'data_modifications': self._detect_data_modifications(code)
             }
             
             return AnalysisSection(
@@ -517,20 +539,177 @@ class JuliusStyleExecutor:
             )
             
         except Exception as e:
+            # Enhanced error handling with context
+            error_context = {
+                'error_type': type(e).__name__,
+                'error_message': str(e),
+                'section_type': section_type,
+                'code_length': len(code),
+                'execution_time': (datetime.utcnow() - execution_start_time).total_seconds()
+            }
+            
+            # Try to extract partial results even on error
+            partial_output = output_buffer.getvalue()
+            partial_tables = []
+            partial_charts = []
+            
+            try:
+                partial_tables = AnalysisClassifier.extract_tables_from_output(partial_output, self.execution_globals)
+            except:
+                pass
+            
+            try:
+                partial_charts = self._extract_charts_robust(code, ignore_errors=True)
+            except:
+                pass
+            
             return AnalysisSection(
                 title=title,
                 section_type=section_type,
                 code=code,
-                output=output_buffer.getvalue(),
+                output=partial_output,
                 success=False,
                 error=str(e),
-                metadata={'error_type': type(e).__name__},
-                tables=[],
-                charts=[],
+                metadata=error_context,
+                tables=partial_tables,
+                charts=partial_charts,
                 order=order
             )
         finally:
             sys.stdout = old_stdout
+            # Clean up plots to prevent memory leaks
+            try:
+                plt.clf()
+                plt.close('all')
+            except:
+                pass
+    
+    def _extract_charts_robust(self, code: str, ignore_errors: bool = False) -> List[Dict]:
+        """Extract chart data with robust error handling"""
+        charts = []
+        
+        try:
+            # Handle matplotlib plots with enhanced error handling
+            if plt.get_fignums():
+                for fig_num in plt.get_fignums():
+                    try:
+                        fig = plt.figure(fig_num)
+                        buf = io.BytesIO()
+                        
+                        # Use different formats based on complexity
+                        try:
+                            fig.savefig(buf, format='png', bbox_inches='tight', dpi=100)
+                        except Exception:
+                            # Fallback to simpler format
+                            fig.savefig(buf, format='png', dpi=80)
+                        
+                        buf.seek(0)
+                        plot_data = base64.b64encode(buf.read()).decode('utf-8')
+                        
+                        chart_type = AnalysisClassifier.determine_chart_type(code, "")
+                        charts.append({
+                            'type': 'matplotlib',
+                            'chart_type': chart_type,
+                            'data': plot_data,
+                            'title': f'{chart_type.title()} Chart',
+                            'fig_num': fig_num
+                        })
+                        
+                        plt.close(fig)
+                        
+                    except Exception as e:
+                        if not ignore_errors:
+                            print(f"Warning: Failed to extract matplotlib figure {fig_num}: {e}")
+                        continue
+            
+            # Handle plotly plots with error handling
+            for var_name, var_value in self.execution_globals.items():
+                try:
+                    if hasattr(var_value, '_module') and 'plotly' in str(var_value._module):
+                        try:
+                            html_str = var_value.to_html(include_plotlyjs='cdn')
+                            chart_type = AnalysisClassifier.determine_chart_type(code, "")
+                            charts.append({
+                                'type': 'plotly',
+                                'chart_type': chart_type,
+                                'data': html_str,
+                                'title': f'{chart_type.title()} Chart (Interactive)',
+                                'variable_name': var_name
+                            })
+                        except Exception as e:
+                            if not ignore_errors:
+                                print(f"Warning: Failed to extract plotly figure {var_name}: {e}")
+                            continue
+                except Exception:
+                    continue
+                    
+        except Exception as e:
+            if not ignore_errors:
+                print(f"Warning: Chart extraction failed: {e}")
+        
+        return charts
+    
+    def _calculate_section_complexity(self, code: str) -> str:
+        """Calculate complexity level of code section"""
+        lines = code.split('\n')
+        non_empty_lines = [line for line in lines if line.strip() and not line.strip().startswith('#')]
+        
+        complexity_score = 0
+        
+        # Count complexity indicators
+        for line in non_empty_lines:
+            line_lower = line.lower()
+            if any(pattern in line_lower for pattern in ['for', 'while', 'if', 'elif', 'try', 'except']):
+                complexity_score += 2
+            if any(pattern in line_lower for pattern in ['lambda', 'list comprehension', 'nested']):
+                complexity_score += 3
+            if any(pattern in line_lower for pattern in ['model', 'fit', 'predict', 'cross_val']):
+                complexity_score += 2
+        
+        lines_factor = len(non_empty_lines)
+        total_score = complexity_score + lines_factor
+        
+        if total_score <= 5:
+            return 'low'
+        elif total_score <= 15:
+            return 'medium'
+        else:
+            return 'high'
+    
+    def _detect_healthcare_context(self, code: str, output: str) -> str:
+        """Detect healthcare research context"""
+        combined_text = (code + ' ' + output).lower()
+        
+        if any(term in combined_text for term in ['clinical', 'patient', 'medical', 'treatment', 'diagnosis']):
+            return 'clinical_research'
+        elif any(term in combined_text for term in ['survival', 'kaplan', 'hazard', 'cox']):
+            return 'survival_analysis'
+        elif any(term in combined_text for term in ['rct', 'trial', 'randomized', 'intervention']):
+            return 'clinical_trial'
+        elif any(term in combined_text for term in ['epidemiology', 'outbreak', 'prevalence', 'incidence']):
+            return 'epidemiological'
+        elif any(term in combined_text for term in ['diagnostic', 'sensitivity', 'specificity', 'roc']):
+            return 'diagnostic_testing'
+        else:
+            return 'general_healthcare'
+    
+    def _detect_data_modifications(self, code: str) -> List[str]:
+        """Detect what data modifications were made"""
+        modifications = []
+        code_lower = code.lower()
+        
+        if any(pattern in code_lower for pattern in ['fillna', 'dropna', 'drop']):
+            modifications.append('missing_data_handling')
+        if any(pattern in code_lower for pattern in ['merge', 'join', 'concat']):
+            modifications.append('data_merging')
+        if any(pattern in code_lower for pattern in ['groupby', 'pivot', 'melt']):
+            modifications.append('data_reshaping')
+        if any(pattern in code_lower for pattern in ['scale', 'normalize', 'standardize']):
+            modifications.append('data_scaling')
+        if any(pattern in code_lower for pattern in ['encode', 'dummy', 'categorical']):
+            modifications.append('encoding')
+        
+        return modifications
     
     def _extract_charts(self, code: str) -> List[Dict]:
         """Extract chart data from matplotlib and plotly"""
