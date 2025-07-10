@@ -454,6 +454,25 @@ async def suggest_analysis(session_id: str, gemini_api_key: str = Form(...)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@api_router.get("/sessions/{session_id}/analysis-history")
+async def get_analysis_history(session_id: str):
+    """Get analysis history for a session"""
+    try:
+        analyses = await db.analysis_results.find({"session_id": session_id}).sort("timestamp", -1).to_list(1000)
+        return [AnalysisResult(**analysis) for analysis in analyses]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/sessions/{session_id}/save-analysis")
+async def save_analysis_result(session_id: str, result: AnalysisResult):
+    """Save analysis result to history"""
+    try:
+        result.session_id = session_id
+        await db.analysis_results.insert_one(result.dict())
+        return {"message": "Analysis saved successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 # Include the router in the main app
 app.include_router(api_router)
 
