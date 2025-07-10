@@ -765,12 +765,14 @@ print("All advanced statistical libraries working properly!")
             return False
     
     def run_all_tests(self) -> Dict[str, bool]:
-        """Run all backend tests"""
-        print("=" * 60)
-        print("STARTING BACKEND API TESTING")
-        print("=" * 60)
+        """Run all backend tests including enhanced features"""
+        print("=" * 80)
+        print("STARTING ENHANCED BACKEND API TESTING")
+        print("Testing Enhanced AI Statistical Software Backend")
+        print("=" * 80)
         
-        tests = [
+        # Core tests (existing functionality)
+        core_tests = [
             ("CSV File Upload API", self.test_csv_upload_api),
             ("Chat Session Management", self.test_session_management),
             ("Gemini LLM Integration", self.test_gemini_llm_integration),
@@ -778,9 +780,21 @@ print("All advanced statistical libraries working properly!")
             ("Statistical Analysis Suggestions", self.test_statistical_analysis_suggestions)
         ]
         
+        # Enhanced tests (new features)
+        enhanced_tests = [
+            ("Enhanced LLM Intelligence", self.test_enhanced_llm_intelligence),
+            ("New Visualization Libraries", self.test_new_visualization_libraries),
+            ("Analysis History Endpoints", self.test_analysis_history_endpoints),
+            ("Enhanced Code Execution", self.test_enhanced_code_execution)
+        ]
+        
+        all_tests = core_tests + enhanced_tests
         results = {}
         
-        for test_name, test_func in tests:
+        print("\n🔍 TESTING CORE FUNCTIONALITY:")
+        print("-" * 50)
+        
+        for test_name, test_func in core_tests:
             print(f"\n{'-' * 40}")
             try:
                 results[test_name] = test_func()
@@ -790,17 +804,51 @@ print("All advanced statistical libraries working properly!")
             
             time.sleep(1)  # Brief pause between tests
         
-        print(f"\n{'=' * 60}")
-        print("BACKEND TESTING SUMMARY")
-        print("=" * 60)
+        print(f"\n\n🚀 TESTING ENHANCED FEATURES:")
+        print("-" * 50)
         
-        for test_name, passed in results.items():
+        for test_name, test_func in enhanced_tests:
+            print(f"\n{'-' * 40}")
+            try:
+                results[test_name] = test_func()
+            except Exception as e:
+                print(f"❌ {test_name} failed with exception: {str(e)}")
+                results[test_name] = False
+            
+            time.sleep(1)  # Brief pause between tests
+        
+        print(f"\n{'=' * 80}")
+        print("ENHANCED BACKEND TESTING SUMMARY")
+        print("=" * 80)
+        
+        print("\n📊 CORE FUNCTIONALITY RESULTS:")
+        for test_name, test_func in core_tests:
+            passed = results[test_name]
             status = "✅ PASSED" if passed else "❌ FAILED"
-            print(f"{test_name}: {status}")
+            print(f"  {test_name}: {status}")
+        
+        print("\n🔬 ENHANCED FEATURES RESULTS:")
+        for test_name, test_func in enhanced_tests:
+            passed = results[test_name]
+            status = "✅ PASSED" if passed else "❌ FAILED"
+            print(f"  {test_name}: {status}")
         
         total_tests = len(results)
         passed_tests = sum(results.values())
-        print(f"\nOverall: {passed_tests}/{total_tests} tests passed")
+        core_passed = sum(results[name] for name, _ in core_tests)
+        enhanced_passed = sum(results[name] for name, _ in enhanced_tests)
+        
+        print(f"\n📈 OVERALL RESULTS:")
+        print(f"  Core Functionality: {core_passed}/{len(core_tests)} tests passed")
+        print(f"  Enhanced Features: {enhanced_passed}/{len(enhanced_tests)} tests passed")
+        print(f"  Total: {passed_tests}/{total_tests} tests passed")
+        
+        if passed_tests == total_tests:
+            print(f"\n🎉 ALL TESTS PASSED! Enhanced AI Statistical Backend is fully functional.")
+        elif enhanced_passed == len(enhanced_tests):
+            print(f"\n✨ All enhanced features working! Some core issues may need attention.")
+        else:
+            print(f"\n⚠️  Some tests failed. Review results above for details.")
         
         return results
 
