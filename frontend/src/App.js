@@ -299,12 +299,26 @@ const App = () => {
           <div>
             <h4 className="font-medium text-gray-700 mb-2">Visualizations:</h4>
             {executionResult.plots.map((plot, index) => (
-              <img 
-                key={index} 
-                src={`data:image/png;base64,${plot}`} 
-                alt={`Plot ${index + 1}`}
-                className="max-w-full rounded shadow-lg mb-2"
-              />
+              <div key={index} className="mb-4">
+                {plot.type === 'matplotlib' ? (
+                  <img 
+                    src={`data:image/png;base64,${plot.data}`} 
+                    alt={`Plot ${index + 1}`}
+                    className="max-w-full rounded shadow-lg"
+                  />
+                ) : plot.type === 'plotly' ? (
+                  <div 
+                    dangerouslySetInnerHTML={{ __html: plot.html }}
+                    className="plotly-container"
+                  />
+                ) : (
+                  <img 
+                    src={`data:image/png;base64,${plot}`} 
+                    alt={`Plot ${index + 1}`}
+                    className="max-w-full rounded shadow-lg"
+                  />
+                )}
+              </div>
             ))}
           </div>
         )}
