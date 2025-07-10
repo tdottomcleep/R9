@@ -357,10 +357,8 @@ metadata:
 
 test_plan:
   current_focus:
-    - "CSV File Upload API"
-    - "Chat Session Management"
     - "Gemini LLM Integration"
-    - "Python Code Execution Sandbox"
+    - "Statistical Analysis Suggestions"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
