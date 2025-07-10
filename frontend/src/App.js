@@ -550,6 +550,23 @@ const App = () => {
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
               <DataPreview session={currentSession} />
               
+              {/* Analysis Suggestions Button */}
+              <div className="bg-gradient-to-r from-green-50 to-teal-50 p-4 rounded-lg border border-green-200">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="font-medium text-gray-800">Need Analysis Ideas?</h4>
+                    <p className="text-sm text-gray-600">Get AI-powered statistical analysis suggestions</p>
+                  </div>
+                  <button
+                    onClick={() => getAnalysisSuggestions()}
+                    disabled={isLoading || !geminiApiKey}
+                    className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 disabled:opacity-50 text-sm"
+                  >
+                    Get Suggestions
+                  </button>
+                </div>
+              </div>
+              
               {messages.map(message => (
                 <MessageRenderer key={message.id} message={message} />
               ))}
