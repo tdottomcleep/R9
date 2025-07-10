@@ -95,6 +95,37 @@ class AnalysisResult(BaseModel):
     timestamp: datetime = Field(default_factory=datetime.utcnow)
     raw_results: Optional[Dict] = None
 
+# New models for Julius AI-style sectioned analysis
+class AnalysisSection(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    title: str
+    section_type: str  # 'summary', 'descriptive', 'statistical_test', 'visualization', 'model'
+    code: str
+    output: str
+    success: bool
+    error: Optional[str] = None
+    metadata: Dict = Field(default_factory=dict)
+    tables: List[Dict] = Field(default_factory=list)
+    charts: List[Dict] = Field(default_factory=list)
+    order: int = 0
+
+class StructuredAnalysisResult(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    session_id: str
+    title: str
+    sections: List[AnalysisSection]
+    total_sections: int
+    execution_time: float
+    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    overall_success: bool
+
+class EnhancedPythonExecutionRequest(BaseModel):
+    session_id: str
+    code: str
+    gemini_api_key: str
+    analysis_title: Optional[str] = "Statistical Analysis"
+    auto_section: bool = True  # Whether to auto-detect analysis sections
+
 # API Routes
 @api_router.get("/")
 async def root():
