@@ -251,7 +251,18 @@ async def execute_python_code(session_id: str, request: PythonExecutionRequest):
             'LinearRegression': LinearRegression,
             'r2_score': r2_score,
             'io': io,
-            'base64': base64
+            'base64': base64,
+            'go': go,
+            'px': px,
+            'ff': ff,
+            'pio': pio,
+            'sm': sm,
+            'mcnemar': mcnemar,
+            'KaplanMeierFitter': KaplanMeierFitter,
+            'CoxPHFitter': CoxPHFitter,
+            'logrank_test': logrank_test,
+            'datetime': datetime,
+            'json': json
         }
         
         # Capture output
