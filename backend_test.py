@@ -1168,7 +1168,588 @@ print("All advanced statistical libraries working properly!")
         
         return results
 
+    def test_julius_ai_sectioned_execution(self) -> bool:
+        """Test the new Julius AI-style sectioned execution endpoint"""
+        print("Testing Julius AI-Style Sectioned Execution...")
+        
+        if not self.session_id:
+            print("❌ No session ID available for sectioned execution testing")
+            return False
+        
+        try:
+            # Test sample code with multiple sections as requested
+            sample_code = """
+# Clinical Overview Summary
+print("CLINICAL OUTCOMES SUMMARY")
+print("=" * 50)
+total_patients = len(df)
+print(f"Total Patients: {total_patients}")
+
+# Descriptive Statistics  
+print("\\nDESCRIPTIVE STATISTICS")
+print(df.describe())
+
+# Statistical Testing
+from scipy import stats
+if 'age' in df.columns and 'gender' in df.columns:
+    male_age = df[df['gender'] == 'M']['age']
+    female_age = df[df['gender'] == 'F']['age']
+    t_stat, p_value = stats.ttest_ind(male_age, female_age)
+    print(f"T-test: t={t_stat:.3f}, p={p_value:.3f}")
+
+# Data Visualization
+import matplotlib.pyplot as plt
+plt.figure(figsize=(10, 6))
+plt.hist(df['age'], bins=15, alpha=0.7, color='blue')
+plt.title('Age Distribution')
+plt.xlabel('Age')
+plt.ylabel('Frequency')
+plt.show()
+"""
+            
+            data = {
+                'session_id': self.session_id,
+                'code': sample_code,
+                'gemini_api_key': TEST_API_KEY,
+                'analysis_title': 'Medical Data Analysis',
+                'auto_section': True
+            }
+            
+            response = requests.post(f"{BACKEND_URL}/sessions/{self.session_id}/execute-sectioned", 
+                                   json=data, 
+                                   headers={'Content-Type': 'application/json'})
+            
+            if response.status_code == 200:
+                result = response.json()
+                
+                # Verify structured analysis result format
+                required_fields = ['id', 'session_id', 'title', 'sections', 'total_sections', 'execution_time', 'overall_success']
+                if all(field in result for field in required_fields):
+                    print("✅ Structured analysis result format correct")
+                    
+                    # Verify sections structure
+                    sections = result.get('sections', [])
+                    if len(sections) > 0:
+                        print(f"✅ Code split into {len(sections)} sections")
+                        
+                        # Check section classification
+                        section_types = [section.get('section_type') for section in sections]
+                        expected_types = ['summary', 'descriptive', 'statistical_test', 'visualization']
+                        
+                        classification_correct = any(expected_type in section_types for expected_type in expected_types)
+                        if classification_correct:
+                            print("✅ Section classification working correctly")
+                            
+                            # Check for tables and charts extraction
+                            has_tables = any(section.get('tables', []) for section in sections)
+                            has_charts = any(section.get('charts', []) for section in sections)
+                            
+                            if has_tables:
+                                print("✅ Table extraction working")
+                            if has_charts:
+                                print("✅ Chart extraction working")
+                            
+                            # Check metadata
+                            has_metadata = all(section.get('metadata') for section in sections)
+                            if has_metadata:
+                                print("✅ Section metadata generation working")
+                                
+                                return True
+                            else:
+                                print("❌ Section metadata missing")
+                                return False
+                        else:
+                            print("❌ Section classification not working properly")
+                            print(f"Found types: {section_types}")
+                            return False
+                    else:
+                        print("❌ No sections generated")
+                        return False
+                else:
+                    print("❌ Structured analysis result format incorrect")
+                    print(f"Missing fields: {[field for field in required_fields if field not in result]}")
+                    return False
+            else:
+                print(f"❌ Sectioned execution failed with status {response.status_code}: {response.text}")
+                return False
+                
+        except Exception as e:
+            print(f"❌ Julius AI sectioned execution test failed with error: {str(e)}")
+            return False
+
+    def test_structured_analysis_retrieval(self) -> bool:
+        """Test structured analysis retrieval endpoints"""
+        print("Testing Structured Analysis Retrieval Endpoints...")
+        
+        if not self.session_id:
+            print("❌ No session ID available for structured analysis retrieval testing")
+            return False
+        
+        try:
+            # First, create a structured analysis
+            sample_code = """
+# Summary Analysis
+print("Dataset Overview")
+print(f"Shape: {df.shape}")
+print(f"Columns: {list(df.columns)}")
+
+# Statistical Analysis
+import numpy as np
+mean_age = np.mean(df['age'])
+print(f"Mean age: {mean_age:.2f}")
+"""
+            
+            create_data = {
+                'session_id': self.session_id,
+                'code': sample_code,
+                'gemini_api_key': TEST_API_KEY,
+                'analysis_title': 'Test Analysis for Retrieval',
+                'auto_section': True
+            }
+            
+            create_response = requests.post(f"{BACKEND_URL}/sessions/{self.session_id}/execute-sectioned", 
+                                          json=create_data, 
+                                          headers={'Content-Type': 'application/json'})
+            
+            if create_response.status_code == 200:
+                created_analysis = create_response.json()
+                analysis_id = created_analysis.get('id')
+                
+                if analysis_id:
+                    print("✅ Structured analysis created successfully")
+                    
+                    # Test get all structured analyses for session
+                    get_all_response = requests.get(f"{BACKEND_URL}/sessions/{self.session_id}/structured-analyses")
+                    
+                    if get_all_response.status_code == 200:
+                        all_analyses = get_all_response.json()
+                        if isinstance(all_analyses, list) and len(all_analyses) > 0:
+                            print("✅ Get all structured analyses working")
+                            
+                            # Test get specific structured analysis
+                            get_specific_response = requests.get(f"{BACKEND_URL}/sessions/{self.session_id}/structured-analyses/{analysis_id}")
+                            
+                            if get_specific_response.status_code == 200:
+                                specific_analysis = get_specific_response.json()
+                                if specific_analysis.get('id') == analysis_id:
+                                    print("✅ Get specific structured analysis working")
+                                    return True
+                                else:
+                                    print("❌ Specific analysis ID mismatch")
+                                    return False
+                            else:
+                                print(f"❌ Get specific analysis failed with status {get_specific_response.status_code}")
+                                return False
+                        else:
+                            print("❌ Get all analyses returned empty or invalid response")
+                            return False
+                    else:
+                        print(f"❌ Get all analyses failed with status {get_all_response.status_code}")
+                        return False
+                else:
+                    print("❌ Created analysis missing ID")
+                    return False
+            else:
+                print(f"❌ Failed to create structured analysis for testing: {create_response.status_code}")
+                return False
+                
+        except Exception as e:
+            print(f"❌ Structured analysis retrieval test failed with error: {str(e)}")
+            return False
+
+    def test_analysis_classification_system(self) -> bool:
+        """Test the analysis classification system with various code types"""
+        print("Testing Analysis Classification System...")
+        
+        if not self.session_id:
+            print("❌ No session ID available for classification testing")
+            return False
+        
+        try:
+            # Test different types of code sections
+            test_cases = [
+                {
+                    'name': 'Summary Code',
+                    'code': '''
+# Clinical Overview
+print("CLINICAL OUTCOMES SUMMARY")
+total_patients = len(df)
+print(f"Total Patients: {total_patients}")
+print(df.info())
+''',
+                    'expected_type': 'summary'
+                },
+                {
+                    'name': 'Descriptive Statistics Code',
+                    'code': '''
+# Descriptive Analysis
+print("Descriptive Statistics")
+print(df.describe())
+print(df.mean())
+print(df.groupby('gender').agg({'age': 'mean'}))
+''',
+                    'expected_type': 'descriptive'
+                },
+                {
+                    'name': 'Statistical Test Code',
+                    'code': '''
+# Statistical Testing
+from scipy import stats
+male_data = df[df['gender'] == 'M']['age']
+female_data = df[df['gender'] == 'F']['age']
+t_stat, p_value = stats.ttest_ind(male_data, female_data)
+print(f"T-test results: t={t_stat:.3f}, p={p_value:.3f}")
+''',
+                    'expected_type': 'statistical_test'
+                },
+                {
+                    'name': 'Visualization Code',
+                    'code': '''
+# Data Visualization
+import matplotlib.pyplot as plt
+plt.figure(figsize=(10, 6))
+plt.hist(df['age'], bins=15)
+plt.title('Age Distribution')
+plt.show()
+''',
+                    'expected_type': 'visualization'
+                }
+            ]
+            
+            classification_results = []
+            
+            for test_case in test_cases:
+                print(f"  Testing {test_case['name']}...")
+                
+                data = {
+                    'session_id': self.session_id,
+                    'code': test_case['code'],
+                    'gemini_api_key': TEST_API_KEY,
+                    'analysis_title': f"Classification Test - {test_case['name']}",
+                    'auto_section': True
+                }
+                
+                response = requests.post(f"{BACKEND_URL}/sessions/{self.session_id}/execute-sectioned", 
+                                       json=data, 
+                                       headers={'Content-Type': 'application/json'})
+                
+                if response.status_code == 200:
+                    result = response.json()
+                    sections = result.get('sections', [])
+                    
+                    if sections:
+                        section_type = sections[0].get('section_type')
+                        if section_type == test_case['expected_type']:
+                            print(f"    ✅ Correctly classified as '{section_type}'")
+                            classification_results.append(True)
+                        else:
+                            print(f"    ❌ Incorrectly classified as '{section_type}', expected '{test_case['expected_type']}'")
+                            classification_results.append(False)
+                    else:
+                        print(f"    ❌ No sections generated")
+                        classification_results.append(False)
+                else:
+                    print(f"    ❌ Request failed with status {response.status_code}")
+                    classification_results.append(False)
+                
+                time.sleep(0.5)  # Brief pause between requests
+            
+            # Overall classification system assessment
+            correct_classifications = sum(classification_results)
+            total_tests = len(classification_results)
+            
+            if correct_classifications == total_tests:
+                print(f"✅ Analysis classification system working perfectly ({correct_classifications}/{total_tests})")
+                return True
+            elif correct_classifications > total_tests // 2:
+                print(f"✅ Analysis classification system mostly working ({correct_classifications}/{total_tests})")
+                return True
+            else:
+                print(f"❌ Analysis classification system needs improvement ({correct_classifications}/{total_tests})")
+                return False
+                
+        except Exception as e:
+            print(f"❌ Analysis classification test failed with error: {str(e)}")
+            return False
+
+    def test_error_handling_sectioned_execution(self) -> bool:
+        """Test error handling for sectioned execution"""
+        print("Testing Error Handling for Sectioned Execution...")
+        
+        if not self.session_id:
+            print("❌ No session ID available for error handling testing")
+            return False
+        
+        try:
+            # Test with invalid code
+            invalid_code = """
+# This code has syntax errors
+invalid_syntax_here = 
+print("This will fail")
+undefined_variable.method()
+"""
+            
+            data = {
+                'session_id': self.session_id,
+                'code': invalid_code,
+                'gemini_api_key': TEST_API_KEY,
+                'analysis_title': 'Error Handling Test',
+                'auto_section': True
+            }
+            
+            response = requests.post(f"{BACKEND_URL}/sessions/{self.session_id}/execute-sectioned", 
+                                   json=data, 
+                                   headers={'Content-Type': 'application/json'})
+            
+            if response.status_code == 200:
+                result = response.json()
+                
+                # Check if overall_success is False
+                if not result.get('overall_success', True):
+                    print("✅ Overall success flag correctly set to False for errors")
+                    
+                    # Check if sections contain error information
+                    sections = result.get('sections', [])
+                    if sections:
+                        error_sections = [s for s in sections if not s.get('success', True)]
+                        if error_sections:
+                            # Check if error details are captured
+                            has_error_details = any(s.get('error') for s in error_sections)
+                            if has_error_details:
+                                print("✅ Error details properly captured in sections")
+                                return True
+                            else:
+                                print("❌ Error details not captured")
+                                return False
+                        else:
+                            print("❌ No error sections found despite invalid code")
+                            return False
+                    else:
+                        print("❌ No sections generated for error handling test")
+                        return False
+                else:
+                    print("❌ Overall success flag not properly set for errors")
+                    return False
+            else:
+                print(f"❌ Error handling test failed with status {response.status_code}")
+                return False
+                
+        except Exception as e:
+            print(f"❌ Error handling test failed with error: {str(e)}")
+            return False
+
+    def test_table_and_chart_extraction(self) -> bool:
+        """Test table extraction from pandas DataFrames and chart type determination"""
+        print("Testing Table and Chart Extraction...")
+        
+        if not self.session_id:
+            print("❌ No session ID available for table/chart extraction testing")
+            return False
+        
+        try:
+            # Test code that generates tables and charts
+            extraction_code = """
+# Generate tables and charts for extraction testing
+import pandas as pd
+import matplotlib.pyplot as plt
+
+# Create a summary table
+summary_stats = df.groupby('gender').agg({
+    'age': ['mean', 'std'],
+    'bmi': ['mean', 'std'],
+    'blood_pressure_systolic': ['mean', 'std']
+}).round(2)
+
+print("Summary Statistics by Gender:")
+print(summary_stats)
+
+# Create a crosstab
+crosstab_result = pd.crosstab(df['gender'], df['diabetes'])
+print("\\nCrosstab - Gender vs Diabetes:")
+print(crosstab_result)
+
+# Create a chart
+plt.figure(figsize=(8, 6))
+plt.pie(df['gender'].value_counts(), labels=['Male', 'Female'], autopct='%1.1f%%')
+plt.title('Gender Distribution')
+plt.show()
+
+# Create another chart
+plt.figure(figsize=(10, 6))
+plt.scatter(df['age'], df['bmi'], alpha=0.6)
+plt.xlabel('Age')
+plt.ylabel('BMI')
+plt.title('Age vs BMI Scatter Plot')
+plt.show()
+"""
+            
+            data = {
+                'session_id': self.session_id,
+                'code': extraction_code,
+                'gemini_api_key': TEST_API_KEY,
+                'analysis_title': 'Table and Chart Extraction Test',
+                'auto_section': True
+            }
+            
+            response = requests.post(f"{BACKEND_URL}/sessions/{self.session_id}/execute-sectioned", 
+                                   json=data, 
+                                   headers={'Content-Type': 'application/json'})
+            
+            if response.status_code == 200:
+                result = response.json()
+                sections = result.get('sections', [])
+                
+                if sections:
+                    # Check for table extraction
+                    tables_found = []
+                    charts_found = []
+                    
+                    for section in sections:
+                        tables = section.get('tables', [])
+                        charts = section.get('charts', [])
+                        
+                        tables_found.extend(tables)
+                        charts_found.extend(charts)
+                    
+                    # Verify table extraction
+                    if tables_found:
+                        print(f"✅ Table extraction working - found {len(tables_found)} tables")
+                        
+                        # Check table structure
+                        valid_tables = [t for t in tables_found if 'type' in t and 'content' in t]
+                        if valid_tables:
+                            print("✅ Table structure validation working")
+                        else:
+                            print("❌ Table structure validation failed")
+                            return False
+                    else:
+                        print("⚠️ No tables extracted (may be expected depending on output format)")
+                    
+                    # Verify chart extraction
+                    if charts_found:
+                        print(f"✅ Chart extraction working - found {len(charts_found)} charts")
+                        
+                        # Check chart types
+                        chart_types = [c.get('chart_type') for c in charts_found]
+                        expected_types = ['pie', 'scatter']
+                        
+                        type_detection_working = any(expected_type in chart_types for expected_type in expected_types)
+                        if type_detection_working:
+                            print("✅ Chart type determination working")
+                            return True
+                        else:
+                            print(f"❌ Chart type determination not working properly. Found: {chart_types}")
+                            return False
+                    else:
+                        print("❌ No charts extracted")
+                        return False
+                else:
+                    print("❌ No sections generated for extraction test")
+                    return False
+            else:
+                print(f"❌ Table/chart extraction test failed with status {response.status_code}")
+                return False
+                
+        except Exception as e:
+            print(f"❌ Table/chart extraction test failed with error: {str(e)}")
+            return False
+
+    def run_julius_ai_phase1_tests(self) -> Dict[str, bool]:
+        """Run comprehensive tests for Julius AI-style Phase 1 implementation"""
+        print("=" * 80)
+        print("JULIUS AI-STYLE ENHANCED BACKEND TESTING (PHASE 1)")
+        print("Testing new sectioned execution and structured analysis features")
+        print("=" * 80)
+        
+        # Setup tests (required)
+        setup_tests = [
+            ("CSV File Upload API", self.test_csv_upload_api),
+            ("Chat Session Management", self.test_session_management)
+        ]
+        
+        # Julius AI Phase 1 specific tests
+        julius_tests = [
+            ("Julius AI Sectioned Execution", self.test_julius_ai_sectioned_execution),
+            ("Structured Analysis Retrieval", self.test_structured_analysis_retrieval),
+            ("Analysis Classification System", self.test_analysis_classification_system),
+            ("Error Handling Sectioned Execution", self.test_error_handling_sectioned_execution),
+            ("Table and Chart Extraction", self.test_table_and_chart_extraction)
+        ]
+        
+        results = {}
+        
+        print("\n🔧 SETUP TESTS (Required for Julius AI testing):")
+        print("-" * 50)
+        
+        for test_name, test_func in setup_tests:
+            print(f"\n{'-' * 40}")
+            try:
+                results[test_name] = test_func()
+                if not results[test_name]:
+                    print(f"⚠️  Setup test failed: {test_name}")
+                    print("   Cannot proceed with Julius AI tests without proper setup")
+                    return results
+            except Exception as e:
+                print(f"❌ {test_name} failed with exception: {str(e)}")
+                results[test_name] = False
+                return results
+            
+            time.sleep(1)
+        
+        print(f"\n\n🤖 JULIUS AI PHASE 1 TESTS:")
+        print("-" * 50)
+        
+        for test_name, test_func in julius_tests:
+            print(f"\n{'-' * 40}")
+            try:
+                results[test_name] = test_func()
+            except Exception as e:
+                print(f"❌ {test_name} failed with exception: {str(e)}")
+                results[test_name] = False
+            
+            time.sleep(1)
+        
+        print(f"\n{'=' * 80}")
+        print("JULIUS AI PHASE 1 TESTING SUMMARY")
+        print("=" * 80)
+        
+        print("\n🔧 SETUP RESULTS:")
+        for test_name, test_func in setup_tests:
+            passed = results[test_name]
+            status = "✅ PASSED" if passed else "❌ FAILED"
+            print(f"  {test_name}: {status}")
+        
+        print("\n🤖 JULIUS AI PHASE 1 RESULTS:")
+        for test_name, test_func in julius_tests:
+            passed = results[test_name]
+            status = "✅ PASSED" if passed else "❌ FAILED"
+            print(f"  {test_name}: {status}")
+        
+        setup_passed = sum(results[name] for name, _ in setup_tests)
+        julius_passed = sum(results[name] for name, _ in julius_tests)
+        total_tests = len(results)
+        passed_tests = sum(results.values())
+        
+        print(f"\n📈 OVERALL RESULTS:")
+        print(f"  Setup Tests: {setup_passed}/{len(setup_tests)} tests passed")
+        print(f"  Julius AI Tests: {julius_passed}/{len(julius_tests)} tests passed")
+        print(f"  Total: {passed_tests}/{total_tests} tests passed")
+        
+        if julius_passed == len(julius_tests):
+            print(f"\n🎉 ALL JULIUS AI PHASE 1 TESTS PASSED!")
+            print("   ✅ Sectioned code execution working properly")
+            print("   ✅ Analysis classification system functional")
+            print("   ✅ Structured analysis retrieval working")
+            print("   ✅ Table and chart extraction operational")
+            print("   ✅ Error handling for sectioned execution working")
+        elif julius_passed > 0:
+            print(f"\n✨ Some Julius AI tests passed. Review results for details.")
+        else:
+            print(f"\n⚠️  All Julius AI tests failed. Check implementation and configuration.")
+        
+        return results
+
 if __name__ == "__main__":
     tester = BackendTester()
-    # Run focused tests for updated Gemini integration
-    results = tester.run_focused_gemini_tests()
+    # Run Julius AI Phase 1 tests as requested
+    results = tester.run_julius_ai_phase1_tests()
