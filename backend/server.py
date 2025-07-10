@@ -256,12 +256,12 @@ async def chat_with_llm(session_id: str, message: str = Form(...), gemini_api_ke
         Please respond as a professional biostatistician would - with expertise, precision, and clear communication.
         """
         
-        # Chat with Gemini
+        # Chat with Gemini using stable model
         chat = LlmChat(
             api_key=gemini_api_key,
             session_id=session_id,
             system_message=context
-        ).with_model("gemini", "gemini-2.5-pro-preview-05-06")
+        ).with_model("gemini", "gemini-2.5-flash")
         
         response = await chat.send_message(UserMessage(text=message))
         
