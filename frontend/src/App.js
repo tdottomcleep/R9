@@ -18,6 +18,7 @@ const App = () => {
   const [analysisHistory, setAnalysisHistory] = useState([]);
   const [showApiKeyModal, setShowApiKeyModal] = useState(false);
   const [activeResultTab, setActiveResultTab] = useState('execution'); // 'execution' or 'history'
+  const [structuredAnalyses, setStructuredAnalyses] = useState([]);
   
   const fileInputRef = useRef(null);
   const messagesEndRef = useRef(null);
