@@ -15,7 +15,9 @@ const App = () => {
   const [leftPanelOpen, setLeftPanelOpen] = useState(true);
   const [rightPanelOpen, setRightPanelOpen] = useState(true);
   const [executionResult, setExecutionResult] = useState(null);
+  const [analysisHistory, setAnalysisHistory] = useState([]);
   const [showApiKeyModal, setShowApiKeyModal] = useState(false);
+  const [activeResultTab, setActiveResultTab] = useState('execution'); // 'execution' or 'history'
   
   const fileInputRef = useRef(null);
   const messagesEndRef = useRef(null);
