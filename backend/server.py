@@ -806,6 +806,62 @@ async def execute_python_code(session_id: str, request: PythonExecutionRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@api_router.post("/sessions/{session_id}/execute-sectioned")
+async def execute_sectioned_analysis(session_id: str, request: EnhancedPythonExecutionRequest):
+    """Execute Python code with Julius AI-style sectioned analysis"""
+    try:
+        # Get session data
+        session = await db.chat_sessions.find_one({"id": session_id})
+        if not session:
+            raise HTTPException(status_code=404, detail="Session not found")
+        
+        # Initialize Julius-style executor
+        executor = JuliusStyleExecutor(session)
+        
+        # Execute sectioned analysis
+        result = executor.execute_sectioned_analysis(
+            code=request.code,
+            analysis_title=request.analysis_title
+        )
+        
+        # Store result in database
+        await db.structured_analyses.insert_one(result.dict())
+        
+        return result
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/sessions/{session_id}/structured-analyses")
+async def get_structured_analyses(session_id: str):
+    """Get all structured analyses for a session"""
+    try:
+        analyses = await db.structured_analyses.find(
+            {"session_id": session_id}
+        ).sort("timestamp", -1).to_list(50)
+        
+        return [StructuredAnalysisResult(**analysis) for analysis in analyses]
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/sessions/{session_id}/structured-analyses/{analysis_id}")
+async def get_structured_analysis(session_id: str, analysis_id: str):
+    """Get a specific structured analysis"""
+    try:
+        analysis = await db.structured_analyses.find_one({
+            "id": analysis_id,
+            "session_id": session_id
+        })
+        
+        if not analysis:
+            raise HTTPException(status_code=404, detail="Analysis not found")
+        
+        return StructuredAnalysisResult(**analysis)
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @api_router.post("/sessions/{session_id}/suggest-analysis")
 async def suggest_analysis(session_id: str, gemini_api_key: str = Form(...)):
     """Get analysis suggestions from LLM"""
