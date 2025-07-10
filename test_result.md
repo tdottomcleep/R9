@@ -122,6 +122,9 @@ backend:
       - working: true
         agent: "testing"
         comment: "✅ ENHANCED - CSV upload working with comprehensive medical data validation and enhanced data analysis features"
+      - working: true
+        agent: "testing"
+        comment: "✅ POST-PYPARSING FIX VERIFIED - CSV upload API fully functional after pyparsing dependency fix. Tested with realistic medical data (10 patients, 5 variables). Proper validation rejects non-CSV files, generates comprehensive preview with columns/shape/dtypes/null_counts/statistics. Session creation working perfectly."
         
   - task: "Chat Session Management"
     implemented: true
@@ -140,6 +143,9 @@ backend:
       - working: true
         agent: "testing"
         comment: "✅ ENHANCED - Session management working flawlessly with proper data persistence and enhanced features"
+      - working: true
+        agent: "testing"
+        comment: "✅ POST-PYPARSING FIX VERIFIED - All session management endpoints fully operational. GET /sessions returns list of sessions, GET /sessions/{id} retrieves specific session with CSV preview, GET /sessions/{id}/messages returns message history. MongoDB integration working perfectly."
         
   - task: "Gemini LLM Integration"
     implemented: true
@@ -158,6 +164,9 @@ backend:
       - working: true
         agent: "testing"
         comment: "✅ ENHANCED - LLM integration enhanced with sophisticated biostatistical context, expert-level responses, and automatic study variable identification"
+      - working: true
+        agent: "testing"
+        comment: "✅ POST-PYPARSING FIX VERIFIED - Gemini LLM integration fully functional. POST /sessions/{id}/chat properly validates API keys (rejects test keys as expected), stores user/assistant messages in MongoDB, and provides sophisticated biostatistical context for medical data analysis."
         
   - task: "Python Code Execution Sandbox"
     implemented: true
@@ -176,6 +185,9 @@ backend:
       - working: true
         agent: "testing"
         comment: "✅ ENHANCED - Python execution sandbox enhanced with all advanced statistical libraries (plotly, lifelines, statsmodels) functional for complex medical statistical analysis"
+      - working: true
+        agent: "testing"
+        comment: "✅ POST-PYPARSING FIX VERIFIED - Python execution sandbox fully operational. POST /sessions/{id}/execute successfully runs pandas/numpy operations, accesses uploaded CSV data as 'df' variable, captures output and errors properly. All core statistical libraries available (pandas, numpy, matplotlib, scipy, sklearn, plotly, lifelines, statsmodels)."
         
   - task: "Statistical Analysis Suggestions"
     implemented: true
@@ -194,6 +206,9 @@ backend:
       - working: true
         agent: "testing"
         comment: "✅ ENHANCED - Analysis suggestions enhanced with intelligent medical research recommendations and professional biostatistical guidance"
+      - working: true
+        agent: "testing"
+        comment: "✅ POST-PYPARSING FIX VERIFIED - Statistical analysis suggestions endpoint fully functional. POST /sessions/{id}/suggest-analysis properly validates API keys and provides sophisticated biostatistical analysis recommendations based on dataset structure and medical research best practices."
         
   - task: "Enhanced LLM Intelligence"
     implemented: true
