@@ -299,6 +299,84 @@ const App = () => {
     );
   };
 
+  const JuliusStyleCodeBlock = ({ code, onExecute, sectionTitle = "Code Analysis" }) => {
+    const [isExpanded, setIsExpanded] = useState(false);
+    const [showLineNumbers, setShowLineNumbers] = useState(true);
+    
+    const codeLines = code.split('\n');
+    const displayLines = isExpanded ? codeLines : codeLines.slice(0, 8);
+    const hasMoreLines = codeLines.length > 8;
+    
+    return (
+      <div className="bg-white border border-gray-200 rounded-lg my-3 shadow-sm">
+        {/* Header */}
+        <div className="bg-gray-50 border-b border-gray-200 px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+            <h4 className="text-sm font-medium text-gray-700">{sectionTitle}</h4>
+            <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+              {codeLines.length} lines
+            </span>
+          </div>
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={() => setShowLineNumbers(!showLineNumbers)}
+              className="text-xs text-gray-500 hover:text-gray-700 px-2 py-1 rounded hover:bg-gray-100"
+            >
+              {showLineNumbers ? 'Hide' : 'Show'} Lines
+            </button>
+            <button
+              onClick={() => onExecute(code)}
+              className="bg-blue-600 text-white px-3 py-1 rounded text-xs hover:bg-blue-700 transition-colors"
+            >
+              Execute
+            </button>
+          </div>
+        </div>
+        
+        {/* Code Content */}
+        <div className="relative">
+          <div 
+            className="overflow-auto text-sm bg-gray-50"
+            style={{ maxHeight: '300px' }}
+          >
+            <div className="flex">
+              {/* Line Numbers */}
+              {showLineNumbers && (
+                <div className="bg-gray-100 text-gray-500 px-3 py-2 border-r border-gray-200 select-none">
+                  {displayLines.map((_, index) => (
+                    <div key={index} className="text-right font-mono text-xs leading-5">
+                      {index + 1}
+                    </div>
+                  ))}
+                </div>
+              )}
+              
+              {/* Code */}
+              <div className="flex-1 px-4 py-2">
+                <pre className="text-gray-800 font-mono text-xs leading-5 whitespace-pre-wrap">
+                  {displayLines.join('\n')}
+                </pre>
+              </div>
+            </div>
+          </div>
+          
+          {/* Expand/Collapse Button */}
+          {hasMoreLines && (
+            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-white to-transparent p-3 text-center">
+              <button
+                onClick={() => setIsExpanded(!isExpanded)}
+                className="text-blue-600 hover:text-blue-800 text-sm font-medium bg-white border border-gray-300 px-3 py-1 rounded shadow-sm hover:bg-gray-50 transition-colors"
+              >
+                {isExpanded ? 'Show Less' : `Show ${codeLines.length - 8} More Lines`}
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   const CodeBlock = ({ code, onExecute }) => {
     return (
       <div className="bg-gray-900 text-green-400 p-3 rounded-lg my-2 relative">
