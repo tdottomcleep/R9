@@ -58,60 +58,112 @@ class StructuredAnalysisResult(BaseModel):
     timestamp: datetime = Field(default_factory=datetime.utcnow)
     overall_success: bool
 
-# Analysis Classification System for Julius AI-style sections
+# Enhanced Analysis Classification System for Julius AI-style healthcare research
 class AnalysisClassifier:
     
     @staticmethod
     def classify_code_section(code: str) -> tuple[str, str]:
-        """Classify a code section and return (section_type, title)"""
+        """Classify a code section and return (section_type, title) with healthcare focus"""
         code_lower = code.lower()
         
-        # Summary/Overview patterns
+        # Data Overview/Summary patterns - Enhanced for healthcare
         if any(pattern in code_lower for pattern in [
-            'summary', 'overview', 'describe', 'info()', 'head()', 'shape',
-            'clinical outcomes', 'total patients', 'key findings'
+            'summary', 'overview', 'describe', 'info()', 'head()', 'shape', 'dtypes',
+            'clinical outcomes', 'total patients', 'key findings', 'demographics',
+            'baseline characteristics', 'patient characteristics', 'sample size'
         ]):
-            return 'summary', 'Clinical Overview Summary'
+            return 'summary', 'Clinical Data Overview'
         
-        # Descriptive statistics patterns
+        # Descriptive statistics patterns - Enhanced with healthcare specifics
         elif any(pattern in code_lower for pattern in [
-            'mean()', 'median()', 'std()', 'var()', 'quantile()',
-            'describe()', 'value_counts()', 'groupby', 'agg('
+            'mean()', 'median()', 'std()', 'var()', 'quantile()', 'describe()',
+            'value_counts()', 'groupby', 'agg(', 'aggregate', 'count()',
+            'descriptive', 'central tendency', 'dispersion', 'distribution',
+            'frequency', 'crosstab', 'cross_table', 'contingency',
+            'baseline statistics', 'demographic analysis', 'patient demographics'
         ]):
             return 'descriptive', 'Descriptive Statistics'
         
-        # Statistical test patterns
+        # Statistical test patterns - Enhanced with healthcare tests
         elif any(pattern in code_lower for pattern in [
-            'ttest', 'chi2', 'anova', 'mannwhitney', 'wilcoxon',
-            'pearson', 'spearman', 'correlation', 'regression',
-            'logistic', 'pvalue', 'significance'
+            'ttest', 'chi2', 'anova', 'mannwhitney', 'wilcoxon', 'kruskal',
+            'pearson', 'spearman', 'correlation', 'regression', 'logistic',
+            'pvalue', 'significance', 'hypothesis', 'paired_ttest', 'unpaired',
+            'fisher_exact', 'mcnemar', 'friedman', 'cochran', 'odds_ratio',
+            'relative_risk', 'risk_ratio', 'confidence_interval', 'effect_size',
+            'power_analysis', 'sample_size_calculation', 'bonferroni',
+            'multiple_comparisons', 'post_hoc', 'tukey', 'dunnett'
         ]):
-            return 'statistical_test', 'Statistical Testing'
+            return 'statistical_test', 'Statistical Analysis'
         
-        # Visualization patterns
+        # Survival analysis patterns - New for healthcare
         elif any(pattern in code_lower for pattern in [
-            'plot', 'hist', 'scatter', 'bar', 'pie', 'box',
-            'seaborn', 'matplotlib', 'plotly', 'visualization'
+            'survival', 'kaplan', 'meier', 'hazard', 'cox', 'lifetable',
+            'censored', 'time_to_event', 'log_rank', 'breslow', 'tarone',
+            'nelson_aalen', 'cumulative_hazard', 'survival_curve'
+        ]):
+            return 'survival', 'Survival Analysis'
+        
+        # Epidemiological analysis patterns - New for healthcare
+        elif any(pattern in code_lower for pattern in [
+            'incidence', 'prevalence', 'epidemiology', 'outbreak', 'epidemic',
+            'attack_rate', 'case_fatality', 'mortality_rate', 'morbidity',
+            'standardized_mortality', 'age_adjusted', 'direct_standardization',
+            'indirect_standardization', 'person_years', 'person_time'
+        ]):
+            return 'epidemiological', 'Epidemiological Analysis'
+        
+        # Visualization patterns - Enhanced with healthcare charts
+        elif any(pattern in code_lower for pattern in [
+            'plot', 'hist', 'scatter', 'bar', 'pie', 'box', 'violin',
+            'seaborn', 'matplotlib', 'plotly', 'visualization', 'chart',
+            'forest_plot', 'funnel_plot', 'survival_plot', 'kaplan_meier_plot',
+            'roc_curve', 'precision_recall', 'bland_altman', 'qq_plot',
+            'residual_plot', 'diagnostic_plot', 'heatmap', 'correlation_matrix'
         ]):
             return 'visualization', 'Data Visualization'
         
-        # Model building patterns
+        # Model building patterns - Enhanced with healthcare models
         elif any(pattern in code_lower for pattern in [
-            'model', 'fit()', 'predict', 'score', 'cross_val',
-            'randomforest', 'svm', 'neural', 'machine learning'
+            'model', 'fit()', 'predict', 'score', 'cross_val', 'validation',
+            'randomforest', 'svm', 'neural', 'machine_learning', 'deep_learning',
+            'linear_model', 'logistic_model', 'cox_model', 'mixed_model',
+            'glm', 'gam', 'random_effects', 'fixed_effects', 'multilevel',
+            'hierarchical', 'bayesian', 'prediction_model', 'risk_model'
         ]):
-            return 'model', 'Model Analysis'
+            return 'model', 'Predictive Modeling'
         
-        # Data processing patterns
+        # Clinical trial analysis patterns - New for healthcare
         elif any(pattern in code_lower for pattern in [
-            'fillna', 'dropna', 'merge', 'join', 'transform',
-            'encode', 'scale', 'normalize', 'preprocess'
+            'clinical_trial', 'randomized', 'controlled', 'rct', 'trial',
+            'treatment_effect', 'intervention', 'placebo', 'blinded',
+            'intention_to_treat', 'per_protocol', 'efficacy', 'safety',
+            'adverse_events', 'serious_adverse', 'dropout', 'compliance',
+            'protocol_deviation', 'interim_analysis', 'futility'
+        ]):
+            return 'clinical_trial', 'Clinical Trial Analysis'
+        
+        # Data processing patterns - Enhanced
+        elif any(pattern in code_lower for pattern in [
+            'fillna', 'dropna', 'merge', 'join', 'transform', 'encode',
+            'scale', 'normalize', 'preprocess', 'cleaning', 'imputation',
+            'outlier', 'missing_data', 'data_validation', 'quality_control',
+            'standardization', 'normalization', 'feature_engineering'
         ]):
             return 'preprocessing', 'Data Preprocessing'
         
+        # Diagnostic/Screening analysis patterns - New for healthcare
+        elif any(pattern in code_lower for pattern in [
+            'sensitivity', 'specificity', 'ppv', 'npv', 'diagnostic',
+            'screening', 'roc', 'auc', 'receiver_operating', 'cutoff',
+            'threshold', 'youden', 'likelihood_ratio', 'diagnostic_odds',
+            'predictive_value', 'test_accuracy', 'concordance', 'kappa'
+        ]):
+            return 'diagnostic', 'Diagnostic Test Analysis'
+        
         # Default classification
         else:
-            return 'analysis', 'Data Analysis'
+            return 'analysis', 'Healthcare Data Analysis'
     
     @staticmethod
     def extract_tables_from_output(output: str, execution_globals: dict) -> List[Dict]:
