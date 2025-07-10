@@ -1170,4 +1170,5 @@ print("All advanced statistical libraries working properly!")
 
 if __name__ == "__main__":
     tester = BackendTester()
-    results = tester.run_all_tests()
+    # Run focused tests for updated Gemini integration
+    results = tester.run_focused_gemini_tests()
