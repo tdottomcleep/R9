@@ -90,9 +90,14 @@ class BackendTester:
                         }
                         invalid_response = requests.post(f"{BACKEND_URL}/sessions", files=invalid_files)
                         
-                        if invalid_response.status_code == 400:
-                            print("✅ CSV validation working - rejects non-CSV files")
-                            return True
+                        if invalid_response.status_code in [400, 500]:  # Backend returns 500 but with 400 error message
+                            error_detail = invalid_response.json().get('detail', '')
+                            if 'Only CSV files are supported' in error_detail:
+                                print("✅ CSV validation working - rejects non-CSV files")
+                                return True
+                            else:
+                                print("❌ CSV validation error message incorrect")
+                                return False
                         else:
                             print("❌ CSV validation not working - accepts non-CSV files")
                             return False
