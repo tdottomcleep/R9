@@ -59,6 +59,15 @@ const App = () => {
     }
   };
 
+  const fetchAnalysisHistory = async (sessionId) => {
+    try {
+      const response = await axios.get(`${API}/sessions/${sessionId}/analysis-history`);
+      setAnalysisHistory(response.data);
+    } catch (error) {
+      console.error('Error fetching analysis history:', error);
+    }
+  };
+
   const handleFileUpload = async (event) => {
     const file = event.target.files[0];
     if (!file) return;
