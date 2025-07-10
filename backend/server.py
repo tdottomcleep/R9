@@ -178,31 +178,82 @@ async def chat_with_llm(session_id: str, message: str = Form(...), gemini_api_ke
         )
         await db.chat_messages.insert_one(user_message.dict())
         
-        # Prepare context for LLM
+        # Prepare enhanced context for LLM
         csv_preview = session.get('csv_preview', {})
+        
+        # Enhanced data analysis context
+        columns = csv_preview.get('columns', [])
+        dtypes = csv_preview.get('dtypes', {})
+        null_counts = csv_preview.get('null_counts', {})
+        describe_stats = csv_preview.get('describe', {})
+        
+        # Analyze data types and potential study design
+        numeric_cols = [col for col, dtype in dtypes.items() if 'int' in str(dtype) or 'float' in str(dtype)]
+        categorical_cols = [col for col, dtype in dtypes.items() if 'object' in str(dtype)]
+        
+        # Identify potential study variables
+        potential_outcomes = []
+        potential_exposures = []
+        potential_time_vars = []
+        
+        for col in columns:
+            col_lower = col.lower()
+            # Identify potential outcome variables
+            if any(term in col_lower for term in ['outcome', 'death', 'survival', 'event', 'response', 'improvement', 'cure']):
+                potential_outcomes.append(col)
+            # Identify potential exposure/treatment variables
+            elif any(term in col_lower for term in ['treatment', 'group', 'arm', 'intervention', 'therapy', 'drug', 'placebo', 'vaccine']):
+                potential_exposures.append(col)
+            # Identify potential time variables
+            elif any(term in col_lower for term in ['time', 'day', 'week', 'month', 'year', 'duration', 'follow']):
+                potential_time_vars.append(col)
+        
         context = f"""
-        You are an AI Data Scientist assistant. The user has uploaded a CSV file: {session['file_name']}
+        You are an Expert AI Data Scientist and Biostatistician. You have been provided with a medical/research dataset: {session['file_name']}
         
-        Dataset Info:
-        - Shape: {csv_preview.get('shape', 'Unknown')}
-        - Columns: {csv_preview.get('columns', [])}
-        - Data Types: {csv_preview.get('dtypes', {})}
-        - Null Values: {csv_preview.get('null_counts', {})}
+        DATASET OVERVIEW:
+        - Shape: {csv_preview.get('shape', 'Unknown')} (rows × columns)
+        - Total Variables: {len(columns)}
+        - Numeric Variables: {len(numeric_cols)} - {numeric_cols}
+        - Categorical Variables: {len(categorical_cols)} - {categorical_cols}
         
-        Sample Data:
-        {csv_preview.get('head', [])}
+        POTENTIAL STUDY VARIABLES IDENTIFIED:
+        - Potential Outcomes: {potential_outcomes if potential_outcomes else 'None automatically identified'}
+        - Potential Exposures/Treatments: {potential_exposures if potential_exposures else 'None automatically identified'}
+        - Potential Time Variables: {potential_time_vars if potential_time_vars else 'None automatically identified'}
         
-        Statistical Summary:
-        {csv_preview.get('describe', {})}
+        DATA QUALITY ASSESSMENT:
+        - Missing Values: {null_counts}
+        - Sample Data Preview: {csv_preview.get('head', [])[:3]}
         
-        You should:
-        1. Help analyze the medical/statistical data
-        2. Suggest appropriate statistical tests
-        3. Provide insights about the data
-        4. Offer to run specific analyses
-        5. Generate Python code for statistical analysis when requested
+        STATISTICAL SUMMARY:
+        {describe_stats}
         
-        When suggesting analysis, be specific about what columns to use and what tests are appropriate.
+        YOUR ROLE AS AN AI DATA SCIENTIST:
+        1. **Data Understanding**: Automatically analyze the dataset structure and identify the type of study (observational, clinical trial, survey, etc.)
+        2. **Intelligent Analysis**: Suggest appropriate statistical methods based on data types and research questions
+        3. **Professional Communication**: Explain analyses in clear, professional language like a senior biostatistician
+        4. **Comprehensive Testing**: Offer a full range of statistical tests including:
+           - Descriptive statistics and data exploration
+           - Hypothesis testing (t-tests, chi-square, ANOVA, etc.)
+           - Regression analysis (linear, logistic, Cox proportional hazards)
+           - Survival analysis (Kaplan-Meier, log-rank tests)
+           - Advanced visualizations (forest plots, survival curves, etc.)
+        5. **Result Interpretation**: Provide clinical/practical interpretation of statistical results
+        6. **Visualization Recommendations**: Suggest appropriate plots and charts for different types of analyses
+        
+        IMPORTANT GUIDELINES:
+        - Always examine the data structure first and identify what type of study this appears to be
+        - When suggesting analyses, be specific about which variables to use and why
+        - Always consider assumptions of statistical tests and suggest appropriate checks
+        - Provide both statistical significance and clinical significance interpretations
+        - Suggest appropriate visualizations for each type of analysis
+        - Generate Python code when requested, using the full range of available libraries
+        
+        AVAILABLE LIBRARIES FOR ANALYSIS:
+        pandas, numpy, scipy, statsmodels, matplotlib, seaborn, plotly, lifelines, sklearn, and more
+        
+        Please respond as a professional biostatistician would - with expertise, precision, and clear communication.
         """
         
         # Chat with Gemini
