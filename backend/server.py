@@ -711,48 +711,6 @@ class JuliusStyleExecutor:
         
         return modifications
     
-    def _extract_charts(self, code: str) -> List[Dict]:
-        """Extract chart data from matplotlib and plotly"""
-        charts = []
-        
-        # Handle matplotlib plots
-        if plt.get_fignums():
-            for fig_num in plt.get_fignums():
-                fig = plt.figure(fig_num)
-                buf = io.BytesIO()
-                fig.savefig(buf, format='png', bbox_inches='tight', dpi=100)
-                buf.seek(0)
-                plot_data = base64.b64encode(buf.read()).decode('utf-8')
-                
-                chart_type = AnalysisClassifier.determine_chart_type(code, "")
-                charts.append({
-                    'type': 'matplotlib',
-                    'chart_type': chart_type,
-                    'data': plot_data,
-                    'title': f'{chart_type.title()} Chart',
-                    'clickable': True
-                })
-                buf.close()
-            plt.close('all')
-        
-        # Handle Plotly plots
-        for var_name, var_value in self.execution_globals.items():
-            if hasattr(var_value, '_module') and 'plotly' in str(var_value._module):
-                try:
-                    html_str = var_value.to_html(include_plotlyjs='cdn')
-                    chart_type = AnalysisClassifier.determine_chart_type(code, "")
-                    charts.append({
-                        'type': 'plotly',
-                        'chart_type': chart_type,
-                        'html': html_str,
-                        'title': f'{chart_type.title()} Chart',
-                        'clickable': True
-                    })
-                except:
-                    pass
-        
-        return charts
-    
     def _extract_variables_used(self, code: str) -> List[str]:
         """Extract variable names used in code"""
         import re
