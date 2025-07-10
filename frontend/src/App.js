@@ -566,7 +566,7 @@ const App = () => {
       <div className={`${rightPanelOpen ? 'w-96' : 'w-12'} transition-all duration-300 bg-white shadow-lg flex flex-col`}>
         <div className="p-4 border-b border-gray-200 flex items-center justify-between">
           <h2 className={`font-semibold text-gray-800 ${rightPanelOpen ? 'block' : 'hidden'}`}>
-            Analysis Results
+            Results & Analysis
           </h2>
           <button
             onClick={() => setRightPanelOpen(!rightPanelOpen)}
@@ -579,9 +579,35 @@ const App = () => {
         </div>
         
         {rightPanelOpen && (
-          <div className="flex-1 overflow-hidden">
-            <ExecutionPanel />
-          </div>
+          <>
+            {/* Tab Navigation */}
+            <div className="flex border-b border-gray-200">
+              <button
+                onClick={() => setActiveResultTab('execution')}
+                className={`flex-1 py-2 px-4 text-sm font-medium ${
+                  activeResultTab === 'execution'
+                    ? 'border-b-2 border-blue-500 text-blue-600'
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                Code Results
+              </button>
+              <button
+                onClick={() => setActiveResultTab('history')}
+                className={`flex-1 py-2 px-4 text-sm font-medium ${
+                  activeResultTab === 'history'
+                    ? 'border-b-2 border-blue-500 text-blue-600'
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                Analysis History
+              </button>
+            </div>
+            
+            <div className="flex-1 overflow-hidden">
+              {activeResultTab === 'execution' ? <ExecutionPanel /> : <AnalysisHistoryPanel />}
+            </div>
+          </>
         )}
       </div>
       
