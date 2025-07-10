@@ -464,7 +464,19 @@ async def suggest_analysis(session_id: str, gemini_api_key: str = Form(...)):
         return {"suggestions": response}
         
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        error_msg = str(e)
+        if "429" in error_msg or "Too Many Requests" in error_msg:
+            raise HTTPException(
+                status_code=429, 
+                detail="Rate limit exceeded. Please wait a moment and try again. Consider using Gemini 2.5 Flash for faster response times."
+            )
+        elif "400" in error_msg or "Bad Request" in error_msg:
+            raise HTTPException(
+                status_code=400, 
+                detail="Invalid API key or request. Please check your Gemini API key and try again."
+            )
+        else:
+            raise HTTPException(status_code=500, detail=f"LLM Error: {error_msg}")
 
 @api_router.get("/sessions/{session_id}/analysis-history")
 async def get_analysis_history(session_id: str):
