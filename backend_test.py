@@ -659,7 +659,7 @@ print(f"T-test (BP by gender): t={t_stat:.3f}, p={p_value:.3f}")
 
 # Chi-square test for diabetes and heart disease
 chi2, p_chi2, dof, expected = stats.chi2_contingency(pd.crosstab(df['diabetes'], df['heart_disease']))
-print(f"Chi-square (diabetes vs heart disease): χ²={chi2:.3f}, p={p_chi2:.3f}")
+print(f"Chi-square (diabetes vs heart disease): chi2={chi2:.3f}, p={p_chi2:.3f}")
 
 # 4. Logistic Regression with Statsmodels
 print("\\n4. LOGISTIC REGRESSION (Statsmodels):")
@@ -668,7 +668,7 @@ y = df['heart_disease']
 X = sm.add_constant(X)
 logit_model = sm.Logit(y, X)
 result = logit_model.fit(disp=0)
-print(f"AIC: {result.aic:.2f}, Pseudo R²: {result.prsquared:.3f}")
+print(f"AIC: {result.aic:.2f}, Pseudo R-squared: {result.prsquared:.3f}")
 
 # 5. Survival Analysis Simulation
 print("\\n5. SURVIVAL ANALYSIS SIMULATION:")
