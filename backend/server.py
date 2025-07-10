@@ -34,6 +34,377 @@ from lifelines.statistics import logrank_test
 import warnings
 warnings.filterwarnings('ignore')
 
+# New models for Julius AI-style sectioned analysis
+class AnalysisSection(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    title: str
+    section_type: str  # 'summary', 'descriptive', 'statistical_test', 'visualization', 'model'
+    code: str
+    output: str
+    success: bool
+    error: Optional[str] = None
+    metadata: Dict = Field(default_factory=dict)
+    tables: List[Dict] = Field(default_factory=list)
+    charts: List[Dict] = Field(default_factory=list)
+    order: int = 0
+
+class StructuredAnalysisResult(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    session_id: str
+    title: str
+    sections: List[AnalysisSection]
+    total_sections: int
+    execution_time: float
+    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    overall_success: bool
+
+# Analysis Classification System for Julius AI-style sections
+class AnalysisClassifier:
+    
+    @staticmethod
+    def classify_code_section(code: str) -> tuple[str, str]:
+        """Classify a code section and return (section_type, title)"""
+        code_lower = code.lower()
+        
+        # Summary/Overview patterns
+        if any(pattern in code_lower for pattern in [
+            'summary', 'overview', 'describe', 'info()', 'head()', 'shape',
+            'clinical outcomes', 'total patients', 'key findings'
+        ]):
+            return 'summary', 'Clinical Overview Summary'
+        
+        # Descriptive statistics patterns
+        elif any(pattern in code_lower for pattern in [
+            'mean()', 'median()', 'std()', 'var()', 'quantile()',
+            'describe()', 'value_counts()', 'groupby', 'agg('
+        ]):
+            return 'descriptive', 'Descriptive Statistics'
+        
+        # Statistical test patterns
+        elif any(pattern in code_lower for pattern in [
+            'ttest', 'chi2', 'anova', 'mannwhitney', 'wilcoxon',
+            'pearson', 'spearman', 'correlation', 'regression',
+            'logistic', 'pvalue', 'significance'
+        ]):
+            return 'statistical_test', 'Statistical Testing'
+        
+        # Visualization patterns
+        elif any(pattern in code_lower for pattern in [
+            'plot', 'hist', 'scatter', 'bar', 'pie', 'box',
+            'seaborn', 'matplotlib', 'plotly', 'visualization'
+        ]):
+            return 'visualization', 'Data Visualization'
+        
+        # Model building patterns
+        elif any(pattern in code_lower for pattern in [
+            'model', 'fit()', 'predict', 'score', 'cross_val',
+            'randomforest', 'svm', 'neural', 'machine learning'
+        ]):
+            return 'model', 'Model Analysis'
+        
+        # Data processing patterns
+        elif any(pattern in code_lower for pattern in [
+            'fillna', 'dropna', 'merge', 'join', 'transform',
+            'encode', 'scale', 'normalize', 'preprocess'
+        ]):
+            return 'preprocessing', 'Data Preprocessing'
+        
+        # Default classification
+        else:
+            return 'analysis', 'Data Analysis'
+    
+    @staticmethod
+    def extract_tables_from_output(output: str, execution_globals: dict) -> List[Dict]:
+        """Extract table data from execution output and globals"""
+        tables = []
+        
+        # Look for pandas DataFrames in output
+        lines = output.split('\n')
+        current_table = []
+        in_table = False
+        
+        for line in lines:
+            # Detect DataFrame-like output
+            if ('|' in line and len(line.split('|')) > 2) or (line.strip() and line.strip()[0].isdigit()):
+                if not in_table:
+                    in_table = True
+                    current_table = []
+                current_table.append(line)
+            else:
+                if in_table and current_table:
+                    # Process completed table
+                    table_text = '\n'.join(current_table)
+                    if len(current_table) > 1:  # Valid table
+                        tables.append({
+                            'type': 'dataframe',
+                            'title': 'Data Table',
+                            'content': table_text,
+                            'rows': len(current_table) - 1,  # Exclude header
+                            'clickable': True
+                        })
+                    in_table = False
+                    current_table = []
+        
+        # Check for DataFrames in execution globals
+        for var_name, var_value in execution_globals.items():
+            if isinstance(var_value, pd.DataFrame) and not var_name.startswith('_'):
+                tables.append({
+                    'type': 'dataframe',
+                    'title': f'Table: {var_name}',
+                    'content': var_value.to_string(),
+                    'data': var_value.head(10).to_dict('records'),  # First 10 rows
+                    'shape': var_value.shape,
+                    'clickable': True
+                })
+        
+        return tables
+    
+    @staticmethod
+    def determine_chart_type(code: str, output: str) -> str:
+        """Determine appropriate chart type based on code and output"""
+        code_lower = code.lower()
+        
+        if any(pattern in code_lower for pattern in ['pie', 'value_counts']):
+            return 'pie'
+        elif any(pattern in code_lower for pattern in ['hist', 'distribution']):
+            return 'histogram'
+        elif any(pattern in code_lower for pattern in ['bar', 'count']):
+            return 'bar'
+        elif any(pattern in code_lower for pattern in ['scatter', 'correlation']):
+            return 'scatter'
+        elif any(pattern in code_lower for pattern in ['box', 'quartile']):
+            return 'box'
+        elif any(pattern in code_lower for pattern in ['line', 'time', 'trend']):
+            return 'line'
+        else:
+            return 'bar'  # Default
+
+# Enhanced Python execution engine
+class JuliusStyleExecutor:
+    
+    def __init__(self, session_data: dict):
+        self.session_data = session_data
+        self.df = None
+        self.execution_globals = {}
+        self._setup_execution_environment()
+    
+    def _setup_execution_environment(self):
+        """Setup the execution environment with data and libraries"""
+        # Decode CSV data
+        if self.session_data.get('file_data'):
+            csv_data = base64.b64decode(self.session_data['file_data']).decode('utf-8')
+            self.df = pd.read_csv(io.StringIO(csv_data))
+        
+        # Setup execution globals
+        self.execution_globals = {
+            'df': self.df,
+            'pd': pd,
+            'np': np,
+            'plt': plt,
+            'sns': sns,
+            'stats': stats,
+            'LinearRegression': LinearRegression,
+            'r2_score': r2_score,
+            'io': io,
+            'base64': base64,
+            'go': go,
+            'px': px,
+            'ff': ff,
+            'pio': pio,
+            'sm': sm,
+            'mcnemar': mcnemar,
+            'KaplanMeierFitter': KaplanMeierFitter,
+            'CoxPHFitter': CoxPHFitter,
+            'logrank_test': logrank_test,
+            'datetime': datetime,
+            'json': json
+        }
+    
+    def execute_sectioned_analysis(self, code: str, analysis_title: str = "Statistical Analysis") -> StructuredAnalysisResult:
+        """Execute code and return structured analysis sections"""
+        start_time = datetime.utcnow()
+        
+        # Split code into logical sections
+        sections = self._split_code_into_sections(code)
+        
+        analysis_sections = []
+        overall_success = True
+        
+        for i, (section_code, section_title) in enumerate(sections):
+            section_result = self._execute_single_section(section_code, section_title, i)
+            analysis_sections.append(section_result)
+            
+            if not section_result.success:
+                overall_success = False
+        
+        end_time = datetime.utcnow()
+        execution_time = (end_time - start_time).total_seconds()
+        
+        return StructuredAnalysisResult(
+            session_id=self.session_data['id'],
+            title=analysis_title,
+            sections=analysis_sections,
+            total_sections=len(analysis_sections),
+            execution_time=execution_time,
+            overall_success=overall_success
+        )
+    
+    def _split_code_into_sections(self, code: str) -> List[tuple[str, str]]:
+        """Split code into logical sections with titles"""
+        sections = []
+        
+        # Split by comments or logical breaks
+        lines = code.split('\n')
+        current_section = []
+        current_title = "Analysis"
+        
+        for line in lines:
+            stripped = line.strip()
+            
+            # Check for section headers (comments that look like titles)
+            if stripped.startswith('#') and len(stripped) > 3:
+                if current_section:
+                    # Process previous section
+                    section_code = '\n'.join(current_section)
+                    if section_code.strip():
+                        section_type, auto_title = AnalysisClassifier.classify_code_section(section_code)
+                        sections.append((section_code, current_title if current_title != "Analysis" else auto_title))
+                    current_section = []
+                
+                # Extract title from comment
+                current_title = stripped[1:].strip()
+                if current_title.startswith('='):
+                    current_title = current_title.strip('=').strip()
+            else:
+                current_section.append(line)
+        
+        # Add final section
+        if current_section:
+            section_code = '\n'.join(current_section)
+            if section_code.strip():
+                section_type, auto_title = AnalysisClassifier.classify_code_section(section_code)
+                sections.append((section_code, current_title if current_title != "Analysis" else auto_title))
+        
+        # If no sections found, treat entire code as one section
+        if not sections:
+            section_type, auto_title = AnalysisClassifier.classify_code_section(code)
+            sections.append((code, auto_title))
+        
+        return sections
+    
+    def _execute_single_section(self, code: str, title: str, order: int) -> AnalysisSection:
+        """Execute a single code section"""
+        section_type, _ = AnalysisClassifier.classify_code_section(code)
+        
+        # Capture output
+        output_buffer = io.StringIO()
+        old_stdout = sys.stdout
+        
+        try:
+            sys.stdout = output_buffer
+            
+            # Execute code
+            exec(code, self.execution_globals)
+            
+            # Get output
+            output = output_buffer.getvalue()
+            
+            # Extract tables
+            tables = AnalysisClassifier.extract_tables_from_output(output, self.execution_globals)
+            
+            # Handle plots
+            charts = self._extract_charts(code)
+            
+            # Create metadata
+            metadata = {
+                'lines_of_code': len(code.split('\n')),
+                'has_output': bool(output.strip()),
+                'chart_type': AnalysisClassifier.determine_chart_type(code, output),
+                'variables_used': self._extract_variables_used(code)
+            }
+            
+            return AnalysisSection(
+                title=title,
+                section_type=section_type,
+                code=code,
+                output=output,
+                success=True,
+                error=None,
+                metadata=metadata,
+                tables=tables,
+                charts=charts,
+                order=order
+            )
+            
+        except Exception as e:
+            return AnalysisSection(
+                title=title,
+                section_type=section_type,
+                code=code,
+                output=output_buffer.getvalue(),
+                success=False,
+                error=str(e),
+                metadata={'error_type': type(e).__name__},
+                tables=[],
+                charts=[],
+                order=order
+            )
+        finally:
+            sys.stdout = old_stdout
+    
+    def _extract_charts(self, code: str) -> List[Dict]:
+        """Extract chart data from matplotlib and plotly"""
+        charts = []
+        
+        # Handle matplotlib plots
+        if plt.get_fignums():
+            for fig_num in plt.get_fignums():
+                fig = plt.figure(fig_num)
+                buf = io.BytesIO()
+                fig.savefig(buf, format='png', bbox_inches='tight', dpi=100)
+                buf.seek(0)
+                plot_data = base64.b64encode(buf.read()).decode('utf-8')
+                
+                chart_type = AnalysisClassifier.determine_chart_type(code, "")
+                charts.append({
+                    'type': 'matplotlib',
+                    'chart_type': chart_type,
+                    'data': plot_data,
+                    'title': f'{chart_type.title()} Chart',
+                    'clickable': True
+                })
+                buf.close()
+            plt.close('all')
+        
+        # Handle Plotly plots
+        for var_name, var_value in self.execution_globals.items():
+            if hasattr(var_value, '_module') and 'plotly' in str(var_value._module):
+                try:
+                    html_str = var_value.to_html(include_plotlyjs='cdn')
+                    chart_type = AnalysisClassifier.determine_chart_type(code, "")
+                    charts.append({
+                        'type': 'plotly',
+                        'chart_type': chart_type,
+                        'html': html_str,
+                        'title': f'{chart_type.title()} Chart',
+                        'clickable': True
+                    })
+                except:
+                    pass
+        
+        return charts
+    
+    def _extract_variables_used(self, code: str) -> List[str]:
+        """Extract variable names used in code"""
+        import re
+        
+        # Simple regex to find DataFrame column references
+        df_columns = re.findall(r"df\[['\"](.*?)['\"]\]", code)
+        df_attrs = re.findall(r"df\.(\w+)", code)
+        
+        variables = list(set(df_columns + df_attrs))
+        return [var for var in variables if var not in ['head', 'tail', 'shape', 'info', 'describe']]
+
 # Emergent LLM integration
 from emergentintegrations.llm.chat import LlmChat, UserMessage, FileContentWithMimeType
 
