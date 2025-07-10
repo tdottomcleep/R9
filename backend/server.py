@@ -1129,6 +1129,17 @@ async def execute_python_code(session_id: str, request: PythonExecutionRequest):
 async def execute_sectioned_analysis(session_id: str, request: EnhancedPythonExecutionRequest):
     """Execute Python code with Julius AI-style sectioned analysis"""
     try:
+        # Validate API key first
+        if not request.gemini_api_key or request.gemini_api_key.strip() == "":
+            raise HTTPException(status_code=400, detail="Gemini API key is required")
+        
+        # Check for test/invalid API keys
+        if request.gemini_api_key in ["test_key_123", "your_api_key_here", "test"]:
+            raise HTTPException(
+                status_code=400, 
+                detail="Please provide a valid Gemini API key. Test keys are not supported for code execution."
+            )
+            
         # Get session data
         session = await db.chat_sessions.find_one({"id": session_id})
         if not session:
@@ -1148,6 +1159,8 @@ async def execute_sectioned_analysis(session_id: str, request: EnhancedPythonExe
         
         return result
         
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
