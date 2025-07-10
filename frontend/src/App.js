@@ -29,6 +29,7 @@ const App = () => {
   useEffect(() => {
     if (currentSession) {
       fetchMessages(currentSession.id);
+      fetchAnalysisHistory(currentSession.id);
     }
   }, [currentSession]);
 
