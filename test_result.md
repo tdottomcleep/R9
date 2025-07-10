@@ -336,6 +336,12 @@ backend:
         agent: "testing"
         comment: "Minor: Table and chart extraction working for simple cases but complex matplotlib code caused 500 error in testing. Core functionality of extract_tables_from_output() and determine_chart_type() methods working. Simple pandas DataFrames and basic charts are extracted properly. Complex visualization code needs refinement but doesn't affect core Julius AI functionality."
       - working: true
+        agent: "main"
+        comment: "✅ PHASE 1 ENHANCED - Upgraded table/chart extraction with robust error handling, healthcare-specific context detection, statistical results extraction, and enhanced chart type determination including forest plots, ROC curves, survival plots, and more."
+      - working: true
+        agent: "testing"
+        comment: "✅ ENHANCED EXTRACTION VERIFIED - Enhanced table/chart extraction working excellently with 32 tables extracted with healthcare-specific context detection and 2 charts extracted successfully. Complex matplotlib code now handled gracefully with partial results extraction instead of 500 errors."
+      - working: true
         agent: "testing"
         comment: "✅ JULIUS AI PHASE 1 ENHANCED VERIFIED - Fixed critical JSON serialization issue with numpy data types that was causing 500 errors. Table and chart extraction now working perfectly with complex matplotlib code. MAJOR IMPROVEMENTS: ✅ Robust Error Handling: Complex matplotlib code (multi-figure plots, memory-intensive visualizations) now handled gracefully with partial results extraction instead of 500 errors. ✅ Enhanced Table Extraction: 32 tables extracted successfully with healthcare-specific context detection (clinical_data, statistical_results, general_data). ✅ Enhanced Chart Extraction: Complex visualizations working with proper error recovery. ✅ Healthcare Context Detection: Automatic detection of clinical data, statistical results, and healthcare-specific table types. The previous 500 error issue with complex matplotlib code is completely resolved."
 
