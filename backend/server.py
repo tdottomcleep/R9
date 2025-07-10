@@ -276,7 +276,19 @@ async def chat_with_llm(session_id: str, message: str = Form(...), gemini_api_ke
         return {"response": response}
         
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        error_msg = str(e)
+        if "429" in error_msg or "Too Many Requests" in error_msg:
+            raise HTTPException(
+                status_code=429, 
+                detail="Rate limit exceeded. Please wait a moment and try again. Consider using Gemini 2.5 Flash for faster response times."
+            )
+        elif "400" in error_msg or "Bad Request" in error_msg:
+            raise HTTPException(
+                status_code=400, 
+                detail="Invalid API key or request. Please check your Gemini API key and try again."
+            )
+        else:
+            raise HTTPException(status_code=500, detail=f"LLM Error: {error_msg}")
 
 @api_router.post("/sessions/{session_id}/execute")
 async def execute_python_code(session_id: str, request: PythonExecutionRequest):
