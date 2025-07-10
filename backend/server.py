@@ -445,7 +445,7 @@ async def suggest_analysis(session_id: str, gemini_api_key: str = Form(...)):
             api_key=gemini_api_key,
             session_id=f"{session_id}_suggestions",
             system_message="You are a statistical analysis expert. Provide suggestions in JSON format."
-        ).with_model("gemini", "gemini-2.5-pro-preview-05-06")
+        ).with_model("gemini", "gemini-2.5-flash")
         
         response = await chat.send_message(UserMessage(text=context))
         
