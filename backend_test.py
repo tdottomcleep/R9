@@ -991,7 +991,96 @@ print("All advanced statistical libraries working properly!")
             print(f"❌ Enhanced code execution test failed with error: {str(e)}")
             return False
     
-    def run_all_tests(self) -> Dict[str, bool]:
+    def run_focused_gemini_tests(self) -> Dict[str, bool]:
+        """Run focused tests for updated Gemini LLM integration"""
+        print("=" * 80)
+        print("FOCUSED TESTING: UPDATED GEMINI LLM INTEGRATION")
+        print("Testing gemini-2.5-flash model and improved error handling")
+        print("=" * 80)
+        
+        # Essential setup tests
+        setup_tests = [
+            ("CSV File Upload API", self.test_csv_upload_api),
+            ("Chat Session Management", self.test_session_management)
+        ]
+        
+        # Focused Gemini tests
+        gemini_tests = [
+            ("Updated Gemini LLM Integration", self.test_gemini_llm_integration),
+            ("Updated Statistical Analysis Suggestions", self.test_statistical_analysis_suggestions),
+            ("Comprehensive Gemini Integration Test", self.test_updated_gemini_integration_comprehensive)
+        ]
+        
+        results = {}
+        
+        print("\n🔧 SETUP TESTS (Required for Gemini testing):")
+        print("-" * 50)
+        
+        for test_name, test_func in setup_tests:
+            print(f"\n{'-' * 40}")
+            try:
+                results[test_name] = test_func()
+                if not results[test_name]:
+                    print(f"⚠️  Setup test failed: {test_name}")
+                    print("   Cannot proceed with Gemini tests without proper setup")
+                    return results
+            except Exception as e:
+                print(f"❌ {test_name} failed with exception: {str(e)}")
+                results[test_name] = False
+                return results
+            
+            time.sleep(1)
+        
+        print(f"\n\n🤖 FOCUSED GEMINI LLM TESTS:")
+        print("-" * 50)
+        
+        for test_name, test_func in gemini_tests:
+            print(f"\n{'-' * 40}")
+            try:
+                results[test_name] = test_func()
+            except Exception as e:
+                print(f"❌ {test_name} failed with exception: {str(e)}")
+                results[test_name] = False
+            
+            time.sleep(1)
+        
+        print(f"\n{'=' * 80}")
+        print("FOCUSED GEMINI TESTING SUMMARY")
+        print("=" * 80)
+        
+        print("\n🔧 SETUP RESULTS:")
+        for test_name, test_func in setup_tests:
+            passed = results[test_name]
+            status = "✅ PASSED" if passed else "❌ FAILED"
+            print(f"  {test_name}: {status}")
+        
+        print("\n🤖 GEMINI LLM RESULTS:")
+        for test_name, test_func in gemini_tests:
+            passed = results[test_name]
+            status = "✅ PASSED" if passed else "❌ FAILED"
+            print(f"  {test_name}: {status}")
+        
+        setup_passed = sum(results[name] for name, _ in setup_tests)
+        gemini_passed = sum(results[name] for name, _ in gemini_tests)
+        total_tests = len(results)
+        passed_tests = sum(results.values())
+        
+        print(f"\n📈 OVERALL RESULTS:")
+        print(f"  Setup Tests: {setup_passed}/{len(setup_tests)} tests passed")
+        print(f"  Gemini Tests: {gemini_passed}/{len(gemini_tests)} tests passed")
+        print(f"  Total: {passed_tests}/{total_tests} tests passed")
+        
+        if gemini_passed == len(gemini_tests):
+            print(f"\n🎉 ALL GEMINI TESTS PASSED!")
+            print("   ✅ gemini-2.5-flash model working properly")
+            print("   ✅ Improved error handling functioning")
+            print("   ✅ Rate limit and API key validation working")
+        elif gemini_passed > 0:
+            print(f"\n✨ Some Gemini tests passed. Review results for details.")
+        else:
+            print(f"\n⚠️  All Gemini tests failed. Check API configuration and model availability.")
+        
+        return results
         """Run all backend tests including enhanced features"""
         print("=" * 80)
         print("STARTING ENHANCED BACKEND API TESTING")
