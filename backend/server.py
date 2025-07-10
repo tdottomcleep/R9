@@ -291,12 +291,12 @@ class AnalysisClassifier:
         """Generate summary statistics for healthcare tables"""
         try:
             summary = {
-                'total_rows': len(df),
-                'total_columns': len(df.columns),
-                'numeric_columns': len(df.select_dtypes(include=[np.number]).columns),
-                'categorical_columns': len(df.select_dtypes(include=['object']).columns),
-                'missing_values': df.isnull().sum().sum(),
-                'completion_rate': round((1 - df.isnull().sum().sum() / (len(df) * len(df.columns))) * 100, 2)
+                'total_rows': int(len(df)),  # Convert to Python int
+                'total_columns': int(len(df.columns)),  # Convert to Python int
+                'numeric_columns': int(len(df.select_dtypes(include=[np.number]).columns)),  # Convert to Python int
+                'categorical_columns': int(len(df.select_dtypes(include=['object']).columns)),  # Convert to Python int
+                'missing_values': int(df.isnull().sum().sum()),  # Convert to Python int
+                'completion_rate': round(float(1 - df.isnull().sum().sum() / (len(df) * len(df.columns))) * 100, 2)  # Convert to Python float
             }
             return summary
         except Exception:
