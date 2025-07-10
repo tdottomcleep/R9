@@ -169,6 +169,33 @@ const App = () => {
     }
   };
 
+  const getAnalysisSuggestions = async () => {
+    if (!currentSession || !geminiApiKey) return;
+
+    setIsLoading(true);
+    try {
+      const formData = new FormData();
+      formData.append('gemini_api_key', geminiApiKey);
+
+      const response = await axios.post(`${API}/sessions/${currentSession.id}/suggest-analysis`, formData);
+      
+      // Add suggestions as a system message
+      const suggestionsMessage = {
+        id: Date.now().toString() + '_suggestions',
+        role: 'assistant',
+        content: `🔬 **Statistical Analysis Suggestions**\n\n${response.data.suggestions}`,
+        timestamp: new Date().toISOString()
+      };
+      setMessages(prev => [...prev, suggestionsMessage]);
+      
+    } catch (error) {
+      console.error('Error getting analysis suggestions:', error);
+      alert('Error getting analysis suggestions. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleKeyPress = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
