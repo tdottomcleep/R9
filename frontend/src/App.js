@@ -149,21 +149,26 @@ const App = () => {
 
     setIsLoading(true);
     try {
-      const response = await axios.post(`${API}/sessions/${currentSession.id}/execute`, {
+      // Use sectioned execution for Julius AI-style results
+      const response = await axios.post(`${API}/sessions/${currentSession.id}/execute-sectioned`, {
         session_id: currentSession.id,
         code: code,
-        gemini_api_key: geminiApiKey
+        gemini_api_key: geminiApiKey,
+        analysis_title: "Statistical Analysis"
       });
 
       setExecutionResult(response.data);
       setRightPanelOpen(true);
+      
+      // Also fetch updated structured analyses
+      fetchStructuredAnalyses(currentSession.id);
+      
     } catch (error) {
       console.error('Error executing code:', error);
       setExecutionResult({
-        success: false,
+        overall_success: false,
         error: 'Error executing code: ' + error.message,
-        output: '',
-        plots: []
+        sections: []
       });
     } finally {
       setIsLoading(false);
