@@ -497,6 +497,13 @@ class EnhancedPythonExecutionRequest(BaseModel):
     analysis_title: Optional[str] = "Statistical Analysis"
     auto_section: bool = True  # Whether to auto-detect analysis sections
 
+class EnhancedPythonExecutionRequest(BaseModel):
+    session_id: str
+    code: str
+    gemini_api_key: str
+    analysis_title: Optional[str] = "Statistical Analysis"
+    auto_section: bool = True  # Whether to auto-detect analysis sections
+
 # API Routes
 @api_router.get("/")
 async def root():
