@@ -411,7 +411,7 @@ const App = () => {
                 if (index % 2 === 0) {
                   return <p key={index} className="whitespace-pre-wrap">{part}</p>;
                 } else {
-                  return <CodeBlock key={index} code={part} onExecute={handleExecuteCode} />;
+                  return <JuliusStyleCodeBlock key={index} code={part} onExecute={handleExecuteCode} sectionTitle="Python Code" />;
                 }
               })}
             </div>
