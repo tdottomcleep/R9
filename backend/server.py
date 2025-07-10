@@ -538,6 +538,31 @@ class JuliusStyleExecutor:
                 order=order
             )
             
+        except SystemExit as e:
+            # Handle SystemExit specifically (from quit(), exit(), etc.)
+            execution_time = (datetime.utcnow() - execution_start_time).total_seconds()
+            error_message = f"Code execution was terminated (exit() or quit() called)"
+            
+            # Get partial output before exit
+            partial_output = output_buffer.getvalue()
+            
+            return AnalysisSection(
+                title=title,
+                section_type=section_type,
+                code=code,
+                output=partial_output,
+                success=False,
+                error=error_message,
+                metadata={
+                    'error_type': 'SystemExit',
+                    'execution_time': execution_time,
+                    'exit_code': e.code,
+                    'warning': 'Code contains exit() or quit() call which terminates execution'
+                },
+                tables=[],
+                charts=[],
+                order=order
+            )
         except Exception as e:
             # Enhanced error handling with context
             error_context = {
