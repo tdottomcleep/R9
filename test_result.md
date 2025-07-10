@@ -212,6 +212,9 @@ backend:
       - working: true
         agent: "testing"
         comment: "✅ POST-PYPARSING FIX VERIFIED - Statistical analysis suggestions endpoint fully functional. POST /sessions/{id}/suggest-analysis properly validates API keys and provides sophisticated biostatistical analysis recommendations based on dataset structure and medical research best practices."
+      - working: true
+        agent: "testing"
+        comment: "✅ UPDATED GEMINI-2.5-FLASH MODEL VERIFIED - Analysis suggestions endpoint fully tested with updated model. FINDINGS: ✅ Model Update: Successfully using gemini-2.5-flash for faster, more reliable analysis suggestions. ✅ Enhanced Error Handling: Proper 400/429 error responses with clear user guidance about Flash model benefits. ✅ API Key Validation: Robust validation with informative error messages. ✅ Suggestions Quality: POST /sessions/{id}/suggest-analysis providing sophisticated biostatistical recommendations using new model. ✅ Rate Limit Resilience: Better rate limit handling with user-friendly messages. Endpoint is production-ready with improved performance and reliability."
         
   - task: "Enhanced LLM Intelligence"
     implemented: true
