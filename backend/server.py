@@ -289,9 +289,27 @@ async def execute_python_code(session_id: str, request: PythonExecutionRequest):
                     fig.savefig(buf, format='png', bbox_inches='tight', dpi=100)
                     buf.seek(0)
                     plot_data = base64.b64encode(buf.read()).decode('utf-8')
-                    plots.append(plot_data)
+                    plots.append({
+                        'type': 'matplotlib',
+                        'data': plot_data
+                    })
                     buf.close()
                 plt.close('all')
+            
+            # Handle Plotly plots (check for plotly figures in execution globals)
+            plotly_plots = []
+            for var_name, var_value in execution_globals.items():
+                if hasattr(var_value, '_module') and 'plotly' in str(var_value._module):
+                    try:
+                        html_str = var_value.to_html(include_plotlyjs='cdn')
+                        plotly_plots.append({
+                            'type': 'plotly',
+                            'html': html_str
+                        })
+                    except:
+                        pass
+            
+            plots.extend(plotly_plots)
             
             result = {
                 "success": True,
