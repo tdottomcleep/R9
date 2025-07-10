@@ -13,6 +13,10 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
+import plotly.graph_objects as go
+import plotly.express as px
+import plotly.figure_factory as ff
+import plotly.io as pio
 import io
 import base64
 import json
@@ -23,6 +27,10 @@ import tempfile
 from scipy import stats
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import r2_score
+import statsmodels.api as sm
+from statsmodels.stats.contingency_tables import mcnemar
+from lifelines import KaplanMeierFitter, CoxPHFitter
+from lifelines.statistics import logrank_test
 import warnings
 warnings.filterwarnings('ignore')
 
