@@ -235,7 +235,7 @@ class AnalysisClassifier:
                             'title': title,
                             'content': var_value.to_string(),
                             'data': var_value.head(10).to_dict('records'),  # First 10 rows
-                            'shape': var_value.shape,
+                            'shape': [int(var_value.shape[0]), int(var_value.shape[1])],  # Convert numpy ints to Python ints
                             'clickable': True,
                             'healthcare_context': AnalysisClassifier._detect_healthcare_context(var_value.to_string()),
                             'summary_stats': AnalysisClassifier._generate_table_summary(var_value)
