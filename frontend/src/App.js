@@ -1030,9 +1030,10 @@ else:
                 return (
                   <AnalysisBlock key={index} title={section.title} icon="📊">
                     <div className="prose prose-sm max-w-none">
-                      <p className="whitespace-pre-wrap text-sm leading-relaxed">
-                        {section.content.trim()}
-                      </p>
+                      <div 
+                        className="whitespace-pre-wrap text-sm leading-relaxed text-slate-700"
+                        dangerouslySetInnerHTML={{ __html: section.content.trim() }}
+                      />
                     </div>
                   </AnalysisBlock>
                 );
