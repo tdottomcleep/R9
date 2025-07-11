@@ -530,13 +530,16 @@ const App = () => {
 
   // Enhanced Message Parser and Renderer
   const parseAndRenderAIResponse = (content) => {
-    // Clean up markdown formatting
+    // Clean up markdown formatting and bold important headings
     const cleanContent = content
-      .replace(/\*\*\*(.*?)\*\*\*/g, '$1')
-      .replace(/\*\*(.*?)\*\*/g, '$1')
-      .replace(/###\s*(.*?)(?=\n|$)/g, '$1')
-      .replace(/##\s*(.*?)(?=\n|$)/g, '$1')
-      .replace(/\*\s*/g, '• ');
+      .replace(/\*\*\*(.*?)\*\*\*/g, '<strong>$1</strong>')
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/###\s*(.*?)(?=\n|$)/g, '<strong>$1</strong>')
+      .replace(/##\s*(.*?)(?=\n|$)/g, '<strong>$1</strong>')
+      .replace(/#{1,6}\s*(.*?)(?=\n|$)/g, '<strong>$1</strong>')
+      .replace(/\*\s*/g, '• ')
+      .replace(/(\d+\.\s*[A-Z][^.]*:)/g, '<strong>$1</strong>') // Bold numbered headings
+      .replace(/([A-Z][^.]*:)(?=\n|$)/g, '<strong>$1</strong>'); // Bold section headings
 
     // Split content into sections
     const sections = [];
@@ -577,7 +580,8 @@ const App = () => {
       if (line.toLowerCase().includes('analysis') || 
           line.toLowerCase().includes('describe') ||
           line.toLowerCase().includes('summary') ||
-          line.toLowerCase().includes('overview')) {
+          line.toLowerCase().includes('overview') ||
+          line.toLowerCase().includes('statistics')) {
         if (currentSection.content.trim()) {
           sections.push(currentSection);
         }
@@ -588,7 +592,9 @@ const App = () => {
       if (line.toLowerCase().includes('suggest') || 
           line.toLowerCase().includes('recommend') ||
           line.toLowerCase().includes('you can') ||
-          line.toLowerCase().includes('would you like')) {
+          line.toLowerCase().includes('would you like') ||
+          line.toLowerCase().includes('potential') ||
+          line.toLowerCase().includes('visualization')) {
         if (currentSection.content.trim()) {
           sections.push(currentSection);
         }
