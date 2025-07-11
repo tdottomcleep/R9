@@ -1664,6 +1664,604 @@ plt.show()
             print(f"❌ Table/chart extraction test failed with error: {str(e)}")
             return False
 
+    def test_statistical_analysis_comprehensive(self) -> bool:
+        """Comprehensive test of statistical analysis functionality focusing on table generation and data serialization"""
+        print("Testing Statistical Analysis with Table Generation and Data Serialization...")
+        
+        if not self.session_id:
+            print("❌ No session ID available for statistical analysis testing")
+            return False
+        
+        try:
+            # Test comprehensive statistical analysis with table generation
+            statistical_code = """
+# Statistical Analysis with Table Generation Test
+import pandas as pd
+import numpy as np
+from scipy import stats
+import matplotlib.pyplot as plt
+
+print("=== STATISTICAL ANALYSIS WITH TABLE GENERATION ===")
+
+# 1. Descriptive Statistics Table
+print("\\n1. DESCRIPTIVE STATISTICS TABLE:")
+desc_stats = df.describe()
+print(desc_stats)
+
+# 2. Correlation Matrix Table
+print("\\n2. CORRELATION MATRIX TABLE:")
+numeric_cols = ['age', 'blood_pressure_systolic', 'blood_pressure_diastolic', 'cholesterol', 'bmi']
+correlation_matrix = df[numeric_cols].corr()
+print(correlation_matrix)
+
+# 3. Cross-tabulation Table
+print("\\n3. CROSS-TABULATION TABLE:")
+crosstab_result = pd.crosstab(df['gender'], df['diabetes'], margins=True)
+print(crosstab_result)
+
+# 4. Statistical Test Results Table
+print("\\n4. STATISTICAL TEST RESULTS:")
+
+# T-test results
+male_bp = df[df['gender'] == 'M']['blood_pressure_systolic']
+female_bp = df[df['gender'] == 'F']['blood_pressure_systolic']
+t_stat, p_value = stats.ttest_ind(male_bp, female_bp)
+
+# Create results table
+test_results = pd.DataFrame({
+    'Test': ['T-test (BP by Gender)', 'Chi-square (Diabetes vs Heart Disease)'],
+    'Statistic': [t_stat, 0.0],  # Will update chi-square
+    'P-value': [p_value, 0.0],
+    'Significant': [p_value < 0.05, False]
+})
+
+# Chi-square test
+chi2, p_chi2, dof, expected = stats.chi2_contingency(pd.crosstab(df['diabetes'], df['heart_disease']))
+test_results.loc[1, 'Statistic'] = chi2
+test_results.loc[1, 'P-value'] = p_chi2
+test_results.loc[1, 'Significant'] = p_chi2 < 0.05
+
+print(test_results)
+
+# 5. Group Statistics Table
+print("\\n5. GROUP STATISTICS TABLE:")
+group_stats = df.groupby('gender').agg({
+    'age': ['mean', 'std', 'count'],
+    'bmi': ['mean', 'std'],
+    'cholesterol': ['mean', 'std']
+}).round(2)
+print(group_stats)
+
+# 6. ANOVA Results Table
+print("\\n6. ANOVA RESULTS TABLE:")
+# Create age groups for ANOVA
+df['age_group'] = pd.cut(df['age'], bins=[0, 30, 50, 100], labels=['Young', 'Middle', 'Senior'])
+groups = [group['cholesterol'].values for name, group in df.groupby('age_group')]
+f_stat, p_anova = stats.f_oneway(*groups)
+
+anova_results = pd.DataFrame({
+    'Source': ['Between Groups', 'Within Groups', 'Total'],
+    'F-statistic': [f_stat, np.nan, np.nan],
+    'P-value': [p_anova, np.nan, np.nan],
+    'Significant': [p_anova < 0.05, np.nan, np.nan]
+})
+print(anova_results)
+
+# 7. Create visualization with statistical annotations
+plt.figure(figsize=(12, 8))
+plt.subplot(2, 2, 1)
+plt.hist([male_bp, female_bp], bins=15, alpha=0.7, label=['Male', 'Female'])
+plt.title(f'BP Distribution by Gender\\n(t={t_stat:.3f}, p={p_value:.3f})')
+plt.legend()
+
+plt.subplot(2, 2, 2)
+df.boxplot(column='cholesterol', by='age_group', ax=plt.gca())
+plt.title(f'Cholesterol by Age Group\\n(F={f_stat:.3f}, p={p_anova:.3f})')
+
+plt.subplot(2, 2, 3)
+plt.scatter(df['bmi'], df['cholesterol'], alpha=0.6)
+plt.xlabel('BMI')
+plt.ylabel('Cholesterol')
+plt.title('BMI vs Cholesterol Relationship')
+
+plt.subplot(2, 2, 4)
+crosstab_result.iloc[:-1, :-1].plot(kind='bar', ax=plt.gca())
+plt.title('Diabetes by Gender')
+plt.xticks(rotation=0)
+
+plt.tight_layout()
+plt.show()
+
+print("\\n✅ STATISTICAL ANALYSIS WITH TABLES COMPLETED")
+print("Tables generated: Descriptive Stats, Correlation Matrix, Cross-tabulation, Test Results, Group Stats, ANOVA")
+"""
+            
+            data = {
+                'session_id': self.session_id,
+                'code': statistical_code,
+                'gemini_api_key': TEST_API_KEY
+            }
+            
+            response = requests.post(f"{BACKEND_URL}/sessions/{self.session_id}/execute", 
+                                   json=data, 
+                                   headers={'Content-Type': 'application/json'})
+            
+            if response.status_code == 200:
+                result = response.json()
+                if result.get('success'):
+                    output = result.get('output', '')
+                    
+                    # Check for statistical analysis components
+                    required_components = [
+                        'DESCRIPTIVE STATISTICS TABLE',
+                        'CORRELATION MATRIX TABLE', 
+                        'CROSS-TABULATION TABLE',
+                        'STATISTICAL TEST RESULTS',
+                        'GROUP STATISTICS TABLE',
+                        'ANOVA RESULTS TABLE',
+                        'STATISTICAL ANALYSIS WITH TABLES COMPLETED'
+                    ]
+                    
+                    components_found = sum(1 for component in required_components if component in output)
+                    
+                    if components_found >= 6:  # At least 6 out of 7 components
+                        print("✅ Statistical analysis with table generation working")
+                        
+                        # Check for plots
+                        if result.get('plots'):
+                            print("✅ Statistical visualizations generated")
+                            return True
+                        else:
+                            print("⚠️ Statistical analysis working but no plots generated")
+                            return True
+                    else:
+                        print(f"❌ Statistical analysis incomplete - only {components_found}/{len(required_components)} components found")
+                        return False
+                else:
+                    print("❌ Statistical analysis execution failed")
+                    print(f"Error: {result.get('error', 'Unknown error')}")
+                    return False
+            else:
+                print(f"❌ Statistical analysis failed with status {response.status_code}")
+                return False
+                
+        except Exception as e:
+            print(f"❌ Statistical analysis test failed with error: {str(e)}")
+            return False
+
+    def test_sectioned_execution_table_focus(self) -> bool:
+        """Test sectioned execution with focus on table generation and serialization"""
+        print("Testing Sectioned Execution - Table Generation Focus...")
+        
+        if not self.session_id:
+            print("❌ No session ID available for sectioned execution table testing")
+            return False
+        
+        try:
+            # Test code specifically designed to generate multiple tables
+            table_focused_code = """
+# Medical Data Analysis with Multiple Tables
+import pandas as pd
+import numpy as np
+from scipy import stats
+
+print("=== MEDICAL DATA ANALYSIS - TABLE GENERATION TEST ===")
+
+# Section 1: Patient Demographics Table
+print("\\n=== PATIENT DEMOGRAPHICS ===")
+demographics = df.groupby('gender').agg({
+    'age': ['count', 'mean', 'std', 'min', 'max'],
+    'bmi': ['mean', 'std'],
+    'blood_pressure_systolic': ['mean', 'std'],
+    'cholesterol': ['mean', 'std']
+}).round(2)
+demographics.columns = ['_'.join(col).strip() for col in demographics.columns]
+print("Demographics Table:")
+print(demographics)
+
+# Section 2: Disease Prevalence Table  
+print("\\n=== DISEASE PREVALENCE ANALYSIS ===")
+prevalence_table = pd.DataFrame({
+    'Condition': ['Diabetes', 'Heart Disease'],
+    'Total_Cases': [df['diabetes'].sum(), df['heart_disease'].sum()],
+    'Prevalence_Rate': [df['diabetes'].mean() * 100, df['heart_disease'].mean() * 100],
+    'Male_Cases': [df[df['gender']=='M']['diabetes'].sum(), df[df['gender']=='M']['heart_disease'].sum()],
+    'Female_Cases': [df[df['gender']=='F']['diabetes'].sum(), df[df['gender']=='F']['heart_disease'].sum()]
+})
+print("Disease Prevalence Table:")
+print(prevalence_table)
+
+# Section 3: Statistical Test Results Table
+print("\\n=== STATISTICAL TEST RESULTS ===")
+# Multiple statistical tests
+test_results = []
+
+# T-test for age by diabetes status
+diabetes_age = df[df['diabetes']==1]['age']
+no_diabetes_age = df[df['diabetes']==0]['age']
+t_stat1, p_val1 = stats.ttest_ind(diabetes_age, no_diabetes_age)
+test_results.append(['Age by Diabetes', 'T-test', t_stat1, p_val1, p_val1 < 0.05])
+
+# T-test for BMI by heart disease
+hd_bmi = df[df['heart_disease']==1]['bmi']
+no_hd_bmi = df[df['heart_disease']==0]['bmi']
+t_stat2, p_val2 = stats.ttest_ind(hd_bmi, no_hd_bmi)
+test_results.append(['BMI by Heart Disease', 'T-test', t_stat2, p_val2, p_val2 < 0.05])
+
+# Chi-square for diabetes vs heart disease
+chi2, p_chi2, dof, expected = stats.chi2_contingency(pd.crosstab(df['diabetes'], df['heart_disease']))
+test_results.append(['Diabetes vs Heart Disease', 'Chi-square', chi2, p_chi2, p_chi2 < 0.05])
+
+statistical_results = pd.DataFrame(test_results, 
+                                 columns=['Comparison', 'Test_Type', 'Statistic', 'P_Value', 'Significant'])
+print("Statistical Test Results Table:")
+print(statistical_results)
+
+# Section 4: Risk Factor Analysis Table
+print("\\n=== RISK FACTOR ANALYSIS ===")
+# Create risk categories
+df['bp_category'] = pd.cut(df['blood_pressure_systolic'], 
+                          bins=[0, 120, 140, 200], 
+                          labels=['Normal', 'Elevated', 'High'])
+df['bmi_category'] = pd.cut(df['bmi'], 
+                           bins=[0, 25, 30, 50], 
+                           labels=['Normal', 'Overweight', 'Obese'])
+
+risk_analysis = pd.crosstab([df['bp_category'], df['bmi_category']], 
+                           df['heart_disease'], 
+                           margins=True, 
+                           normalize='index') * 100
+print("Risk Factor Analysis Table (% with Heart Disease):")
+print(risk_analysis.round(1))
+
+# Section 5: Correlation Analysis Table
+print("\\n=== CORRELATION ANALYSIS ===")
+numeric_vars = ['age', 'bmi', 'blood_pressure_systolic', 'blood_pressure_diastolic', 'cholesterol']
+correlation_matrix = df[numeric_vars].corr()
+print("Correlation Matrix:")
+print(correlation_matrix.round(3))
+
+# Create summary of strong correlations
+strong_corr = []
+for i in range(len(correlation_matrix.columns)):
+    for j in range(i+1, len(correlation_matrix.columns)):
+        corr_val = correlation_matrix.iloc[i, j]
+        if abs(corr_val) > 0.3:  # Strong correlation threshold
+            strong_corr.append([
+                correlation_matrix.columns[i],
+                correlation_matrix.columns[j], 
+                corr_val,
+                'Strong' if abs(corr_val) > 0.5 else 'Moderate'
+            ])
+
+if strong_corr:
+    strong_correlations = pd.DataFrame(strong_corr, 
+                                     columns=['Variable_1', 'Variable_2', 'Correlation', 'Strength'])
+    print("\\nStrong Correlations Table:")
+    print(strong_correlations)
+
+print("\\n✅ TABLE GENERATION TEST COMPLETED")
+print("Generated Tables: Demographics, Disease Prevalence, Statistical Results, Risk Factors, Correlations")
+"""
+            
+            data = {
+                'session_id': self.session_id,
+                'code': table_focused_code,
+                'gemini_api_key': TEST_API_KEY,
+                'analysis_title': 'Medical Data Table Generation Test',
+                'auto_section': True
+            }
+            
+            response = requests.post(f"{BACKEND_URL}/sessions/{self.session_id}/execute-sectioned", 
+                                   json=data, 
+                                   headers={'Content-Type': 'application/json'})
+            
+            if response.status_code == 200:
+                result = response.json()
+                
+                # Check overall success
+                if result.get('overall_success'):
+                    sections = result.get('sections', [])
+                    print(f"✅ Sectioned execution successful - {len(sections)} sections generated")
+                    
+                    # Check for table extraction in sections
+                    total_tables = 0
+                    sections_with_tables = 0
+                    
+                    for section in sections:
+                        tables = section.get('tables', [])
+                        if tables:
+                            sections_with_tables += 1
+                            total_tables += len(tables)
+                            
+                            # Check table structure
+                            for table in tables:
+                                required_table_fields = ['type', 'title', 'content']
+                                if all(field in table for field in required_table_fields):
+                                    print(f"✅ Table structure valid: {table.get('title', 'Unnamed')}")
+                                else:
+                                    print(f"❌ Invalid table structure in section")
+                    
+                    if total_tables >= 5:  # Expecting at least 5 tables
+                        print(f"✅ Table extraction working - {total_tables} tables extracted from {sections_with_tables} sections")
+                        
+                        # Check data serialization - ensure no JSON serialization errors
+                        try:
+                            import json
+                            json.dumps(result)  # Test if result is JSON serializable
+                            print("✅ Data serialization working - result is properly JSON serializable")
+                            return True
+                        except (TypeError, ValueError) as e:
+                            print(f"❌ Data serialization error: {str(e)}")
+                            return False
+                    else:
+                        print(f"❌ Insufficient tables extracted - only {total_tables} tables found")
+                        return False
+                else:
+                    print("❌ Sectioned execution failed")
+                    # Check for partial success
+                    sections = result.get('sections', [])
+                    failed_sections = [s for s in sections if not s.get('success')]
+                    if failed_sections:
+                        print(f"Failed sections: {len(failed_sections)}")
+                        for section in failed_sections[:2]:  # Show first 2 errors
+                            print(f"  Error: {section.get('error', 'Unknown error')}")
+                    return False
+            else:
+                print(f"❌ Sectioned execution failed with status {response.status_code}: {response.text}")
+                return False
+                
+        except Exception as e:
+            print(f"❌ Sectioned execution table test failed with error: {str(e)}")
+            return False
+
+    def test_error_handling_comprehensive(self) -> bool:
+        """Test comprehensive error handling in statistical analysis"""
+        print("Testing Comprehensive Error Handling...")
+        
+        if not self.session_id:
+            print("❌ No session ID available for error handling testing")
+            return False
+        
+        try:
+            # Test various error scenarios
+            error_scenarios = [
+                {
+                    'name': 'Syntax Error',
+                    'code': 'invalid syntax here =',
+                    'expected_error_type': 'SyntaxError'
+                },
+                {
+                    'name': 'Runtime Error - Division by Zero',
+                    'code': 'result = 1 / 0\nprint(result)',
+                    'expected_error_type': 'ZeroDivisionError'
+                },
+                {
+                    'name': 'Statistical Error - Invalid Data',
+                    'code': '''
+import numpy as np
+from scipy import stats
+# Try statistical test with invalid data
+invalid_data = [np.nan, np.nan, np.nan]
+t_stat, p_val = stats.ttest_1samp(invalid_data, 0)
+print(f"Result: {t_stat}, {p_val}")
+''',
+                    'expected_error_type': 'Statistical'
+                },
+                {
+                    'name': 'Memory Error Simulation',
+                    'code': '''
+# Try to create very large array (should be handled gracefully)
+import numpy as np
+try:
+    large_array = np.zeros((10000, 10000, 10))  # Large but not impossible
+    print("Large array created successfully")
+except MemoryError:
+    print("Memory error handled gracefully")
+''',
+                    'expected_error_type': 'Handled'
+                }
+            ]
+            
+            error_handling_results = []
+            
+            for scenario in error_scenarios:
+                print(f"  Testing: {scenario['name']}")
+                
+                data = {
+                    'session_id': self.session_id,
+                    'code': scenario['code'],
+                    'gemini_api_key': TEST_API_KEY
+                }
+                
+                response = requests.post(f"{BACKEND_URL}/sessions/{self.session_id}/execute", 
+                                       json=data, 
+                                       headers={'Content-Type': 'application/json'})
+                
+                if response.status_code == 200:
+                    result = response.json()
+                    
+                    if scenario['name'] == 'Memory Error Simulation':
+                        # This should succeed with graceful handling
+                        if result.get('success'):
+                            print(f"    ✅ {scenario['name']}: Handled gracefully")
+                            error_handling_results.append(True)
+                        else:
+                            print(f"    ❌ {scenario['name']}: Not handled properly")
+                            error_handling_results.append(False)
+                    else:
+                        # These should fail but with proper error reporting
+                        if not result.get('success') and result.get('error'):
+                            error_msg = result.get('error', '')
+                            print(f"    ✅ {scenario['name']}: Error properly captured - {error_msg[:50]}...")
+                            error_handling_results.append(True)
+                        else:
+                            print(f"    ❌ {scenario['name']}: Error not properly handled")
+                            error_handling_results.append(False)
+                else:
+                    print(f"    ❌ {scenario['name']}: Request failed with status {response.status_code}")
+                    error_handling_results.append(False)
+                
+                time.sleep(0.5)  # Brief pause between error tests
+            
+            # Test sectioned execution error handling
+            print("  Testing sectioned execution error handling...")
+            
+            error_sectioned_code = """
+# Section 1: Valid code
+print("This section should work")
+print(df.shape)
+
+# Section 2: Invalid code
+invalid_syntax_here = 
+
+# Section 3: Another valid section
+print("This should also work")
+print("Testing error recovery")
+"""
+            
+            sectioned_data = {
+                'session_id': self.session_id,
+                'code': error_sectioned_code,
+                'gemini_api_key': TEST_API_KEY,
+                'analysis_title': 'Error Handling Test',
+                'auto_section': True
+            }
+            
+            sectioned_response = requests.post(f"{BACKEND_URL}/sessions/{self.session_id}/execute-sectioned", 
+                                             json=sectioned_data, 
+                                             headers={'Content-Type': 'application/json'})
+            
+            if sectioned_response.status_code == 200:
+                sectioned_result = sectioned_response.json()
+                sections = sectioned_result.get('sections', [])
+                
+                # Check if some sections succeeded and some failed
+                successful_sections = [s for s in sections if s.get('success')]
+                failed_sections = [s for s in sections if not s.get('success')]
+                
+                if len(successful_sections) > 0 and len(failed_sections) > 0:
+                    print("    ✅ Sectioned execution error handling: Partial success with error recovery")
+                    error_handling_results.append(True)
+                elif len(successful_sections) > 0:
+                    print("    ✅ Sectioned execution error handling: All sections succeeded (error may have been handled)")
+                    error_handling_results.append(True)
+                else:
+                    print("    ❌ Sectioned execution error handling: All sections failed")
+                    error_handling_results.append(False)
+            else:
+                print(f"    ❌ Sectioned execution error test failed with status {sectioned_response.status_code}")
+                error_handling_results.append(False)
+            
+            # Overall assessment
+            success_rate = sum(error_handling_results) / len(error_handling_results)
+            
+            if success_rate >= 0.8:  # 80% success rate
+                print(f"✅ Error handling comprehensive test passed ({success_rate:.1%} success rate)")
+                return True
+            else:
+                print(f"❌ Error handling comprehensive test failed ({success_rate:.1%} success rate)")
+                return False
+                
+        except Exception as e:
+            print(f"❌ Error handling test failed with error: {str(e)}")
+            return False
+
+    def run_review_focused_tests(self) -> Dict[str, bool]:
+        """Run tests focused on the review request areas"""
+        print("=" * 80)
+        print("REVIEW-FOCUSED TESTING: AI STATISTICAL ANALYSIS APP")
+        print("Focus: Statistical Tests, Table Generation, Data Serialization, Error Handling")
+        print("=" * 80)
+        
+        # Setup tests
+        setup_tests = [
+            ("CSV File Upload API", self.test_csv_upload_api),
+            ("Chat Session Management", self.test_session_management)
+        ]
+        
+        # Review-focused tests
+        review_tests = [
+            ("Statistical Analysis Comprehensive", self.test_statistical_analysis_comprehensive),
+            ("Sectioned Execution - Table Focus", self.test_sectioned_execution_table_focus),
+            ("Error Handling Comprehensive", self.test_error_handling_comprehensive),
+            ("Julius AI Sectioned Execution", self.test_julius_ai_sectioned_execution),
+            ("Structured Analysis Retrieval", self.test_structured_analysis_retrieval),
+            ("Python Code Execution Sandbox", self.test_python_execution_sandbox)
+        ]
+        
+        results = {}
+        
+        print("\n🔧 SETUP TESTS:")
+        print("-" * 50)
+        
+        for test_name, test_func in setup_tests:
+            print(f"\n{'-' * 40}")
+            try:
+                results[test_name] = test_func()
+                if not results[test_name]:
+                    print(f"⚠️  Setup test failed: {test_name}")
+                    print("   Cannot proceed with review tests without proper setup")
+                    return results
+            except Exception as e:
+                print(f"❌ {test_name} failed with exception: {str(e)}")
+                results[test_name] = False
+                return results
+            
+            time.sleep(1)
+        
+        print(f"\n\n🔬 REVIEW-FOCUSED TESTS:")
+        print("-" * 50)
+        
+        for test_name, test_func in review_tests:
+            print(f"\n{'-' * 40}")
+            try:
+                results[test_name] = test_func()
+            except Exception as e:
+                print(f"❌ {test_name} failed with exception: {str(e)}")
+                results[test_name] = False
+            
+            time.sleep(1)
+        
+        print(f"\n{'=' * 80}")
+        print("REVIEW-FOCUSED TESTING SUMMARY")
+        print("=" * 80)
+        
+        print("\n🔧 SETUP RESULTS:")
+        for test_name, test_func in setup_tests:
+            passed = results[test_name]
+            status = "✅ PASSED" if passed else "❌ FAILED"
+            print(f"  {test_name}: {status}")
+        
+        print("\n🔬 REVIEW-FOCUSED RESULTS:")
+        for test_name, test_func in review_tests:
+            passed = results[test_name]
+            status = "✅ PASSED" if passed else "❌ FAILED"
+            print(f"  {test_name}: {status}")
+        
+        setup_passed = sum(results[name] for name, _ in setup_tests)
+        review_passed = sum(results[name] for name, _ in review_tests)
+        total_tests = len(results)
+        passed_tests = sum(results.values())
+        
+        print(f"\n📈 OVERALL RESULTS:")
+        print(f"  Setup Tests: {setup_passed}/{len(setup_tests)} tests passed")
+        print(f"  Review Tests: {review_passed}/{len(review_tests)} tests passed")
+        print(f"  Total: {passed_tests}/{total_tests} tests passed")
+        
+        if review_passed == len(review_tests):
+            print(f"\n🎉 ALL REVIEW-FOCUSED TESTS PASSED!")
+            print("   ✅ Statistical analysis functionality working")
+            print("   ✅ Table generation and extraction working")
+            print("   ✅ Data serialization working properly")
+            print("   ✅ Error handling robust and comprehensive")
+        elif review_passed >= len(review_tests) * 0.8:
+            print(f"\n✨ Most review-focused tests passed. Minor issues may exist.")
+        else:
+            print(f"\n⚠️  Significant issues found in review areas. Check results above.")
+        
+        return results
+
     def run_julius_ai_phase1_tests(self) -> Dict[str, bool]:
         """Run comprehensive tests for Julius AI-style Phase 1 implementation"""
         print("=" * 80)
