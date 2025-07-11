@@ -190,24 +190,35 @@ curl -X POST "http://localhost:8001/api/sessions/{session_id}/execute" \
 
 ## 🏗️ Architecture
 
-### Backend Structure
+### Project Structure
 ```
-backend/
-├── server.py          # Main FastAPI application
-├── requirements.txt   # Python dependencies
-└── .env              # Environment variables
-```
-
-### Frontend Structure
-```
-frontend/
-├── src/
-│   ├── App.js         # Main React component
-│   ├── App.css        # Styling
-│   └── index.js       # Entry point
-├── public/            # Static assets
-├── package.json       # Node.js dependencies
-└── .env              # Environment variables
+ai-statistical-analysis-app/
+├── backend/                    # FastAPI Backend
+│   ├── server.py              # Main application
+│   ├── requirements.txt       # Python dependencies
+│   ├── .env                   # Environment variables
+│   └── .env.example           # Environment template
+├── frontend/                   # React Frontend
+│   ├── src/
+│   │   ├── App.js             # Main React component
+│   │   ├── App.css            # Styling
+│   │   └── index.js           # Entry point
+│   ├── public/                # Static assets
+│   ├── package.json           # Node.js dependencies
+│   ├── .env                   # Environment variables
+│   └── .env.example           # Environment template
+├── examples/                   # Sample datasets
+│   ├── sample_medical_data.csv
+│   ├── clinical_trial_data.csv
+│   ├── survival_data.csv
+│   └── README.md              # Dataset documentation
+├── docs/                       # Documentation
+│   ├── README.md              # Main documentation
+│   ├── INSTALLATION.md        # Setup guide
+│   ├── USAGE_GUIDE.md         # User guide
+│   └── API_REFERENCE.md       # API documentation
+├── project-compass.json       # Project blueprint
+└── setup.sh                   # Quick setup script
 ```
 
 ### Key Components
