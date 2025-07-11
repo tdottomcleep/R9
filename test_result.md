@@ -451,17 +451,17 @@ frontend:
         agent: "main"
         comment: "Enhanced data preview with visual indicators for data quality, variable types, and statistical overview"
         
-  - task: "Analysis History Panel"
+  - task: "Enhanced Chat Interface Organization"
     implemented: true
     working: "NA"
     file: "/app/frontend/src/App.js"
     stuck_count: 0
-    priority: "medium"
+    priority: "high"
     needs_retesting: true
     status_history:
       - working: "NA"
         agent: "main"
-        comment: "Implemented professional analysis history panel with SPSS/R style results display showing test statistics, p-values, and interpretations"
+        comment: "Enhanced chat interface with Julius AI-style organization: improved message blocks with structured content types (analysis, suggestions, code), enhanced code blocks with better styling and rounded borders, clickable analysis buttons (ANOVA, t-tests, etc.), clean text rendering without markdown symbols, and professional appearance with better visual hierarchy."
 
 metadata:
   created_by: "main_agent"
