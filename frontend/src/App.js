@@ -84,11 +84,18 @@ const App = () => {
       const formData = new FormData();
       formData.append('file', file);
 
+      console.log('Uploading file to:', `${API}/sessions`);
+      console.log('FormData:', formData);
+      console.log('File:', file);
+
       const response = await axios.post(`${API}/sessions`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
       });
+
+      console.log('Upload response:', response);
+      console.log('Response data:', response.data);
 
       await fetchSessions();
       setCurrentSession(response.data);
@@ -96,7 +103,19 @@ const App = () => {
       setExecutionResult(null);
     } catch (error) {
       console.error('Error uploading file:', error);
-      alert('Error uploading file. Please try again.');
+      console.error('Error response:', error.response);
+      console.error('Error message:', error.message);
+      console.error('Error status:', error.response?.status);
+      console.error('Error data:', error.response?.data);
+      
+      let errorMessage = 'Error uploading file. Please try again.';
+      if (error.response?.data?.detail) {
+        errorMessage = `Upload failed: ${error.response.data.detail}`;
+      } else if (error.response?.status) {
+        errorMessage = `Upload failed with status ${error.response.status}`;
+      }
+      
+      alert(errorMessage);
     } finally {
       setIsLoading(false);
     }
