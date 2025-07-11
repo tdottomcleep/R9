@@ -23,6 +23,12 @@ const App = () => {
   const [activeResultTab, setActiveResultTab] = useState('execution'); // 'execution' or 'history'
   const [structuredAnalyses, setStructuredAnalyses] = useState([]);
   
+  // Panel resizing state
+  const [centerPanelWidth, setCenterPanelWidth] = useState(60); // percentage
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStartX, setDragStartX] = useState(0);
+  const [dragStartWidth, setDragStartWidth] = useState(60);
+  
   const fileInputRef = useRef(null);
   const messagesEndRef = useRef(null);
 
