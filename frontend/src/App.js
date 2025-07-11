@@ -95,6 +95,110 @@ const App = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  // Table Parser and Renderer Component
+  const TableRenderer = ({ content, title }) => {
+    const parseTableContent = (content) => {
+      const lines = content.split('\n').filter(line => line.trim());
+      
+      // Try to detect if it's a pandas DataFrame output
+      if (lines.length < 2) return null;
+      
+      // Look for pandas-style table (with index and columns)
+      const rows = [];
+      let headers = [];
+      
+      // Find the header row (usually the first non-empty line)
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (line && !line.startsWith('-') && !line.startsWith('=')) {
+          // Check if this looks like a data row
+          const parts = line.split(/\s{2,}|\t/).filter(p => p.trim());
+          if (parts.length > 1) {
+            if (headers.length === 0) {
+              // First data row - extract headers
+              headers = parts;
+            } else {
+              // Data row
+              rows.push(parts);
+            }
+          }
+        }
+      }
+      
+      // If we didn't find proper headers, try a different approach
+      if (headers.length === 0) {
+        // Try to parse as pipe-separated or whitespace-separated
+        const tableLines = lines.filter(line => 
+          line.includes('|') || 
+          (line.trim() && !line.startsWith('-') && !line.startsWith('='))
+        );
+        
+        if (tableLines.length > 0) {
+          const firstLine = tableLines[0];
+          if (firstLine.includes('|')) {
+            // Pipe-separated table
+            headers = firstLine.split('|').map(h => h.trim()).filter(h => h);
+            for (let i = 1; i < tableLines.length; i++) {
+              const rowData = tableLines[i].split('|').map(d => d.trim()).filter(d => d);
+              if (rowData.length > 0) {
+                rows.push(rowData);
+              }
+            }
+          } else {
+            // Whitespace-separated table
+            headers = firstLine.split(/\s{2,}/).map(h => h.trim()).filter(h => h);
+            for (let i = 1; i < tableLines.length; i++) {
+              const rowData = tableLines[i].split(/\s{2,}/).map(d => d.trim()).filter(d => d);
+              if (rowData.length > 0) {
+                rows.push(rowData);
+              }
+            }
+          }
+        }
+      }
+      
+      return { headers, rows };
+    };
+
+    const tableData = parseTableContent(content);
+    
+    if (!tableData || tableData.headers.length === 0) {
+      // Fallback to pre-formatted text if parsing fails
+      return (
+        <pre className="text-sm text-gray-800 whitespace-pre-wrap font-mono">
+          {content}
+        </pre>
+      );
+    }
+    
+    return (
+      <div className="overflow-x-auto">
+        <table className="min-w-full border border-gray-200">
+          <thead className="bg-gray-50">
+            <tr>
+              {tableData.headers.map((header, index) => (
+                <th key={index} className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200">
+                  {header}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className="bg-white divide-y divide-gray-200">
+            {tableData.rows.map((row, rowIndex) => (
+              <tr key={rowIndex} className="hover:bg-gray-50">
+                {row.map((cell, cellIndex) => (
+                  <td key={cellIndex} className="px-3 py-2 text-sm text-gray-900 border-b border-gray-200">
+                    {cell}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    );
+  };
+
   const fetchSessions = async () => {
     try {
       console.log('Fetching sessions from:', `${API}/sessions`);
