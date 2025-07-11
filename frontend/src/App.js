@@ -53,7 +53,8 @@ const App = () => {
     const handleMouseMove = (e) => {
       if (!isDragging) return;
       
-      const containerWidth = window.innerWidth - (leftPanelOpen ? 320 : 48) - (rightPanelOpen ? 48 : 48);
+      const leftPanelWidth = leftPanelOpen ? 320 : 48; // 80*4 = 320px, 12*4 = 48px
+      const containerWidth = window.innerWidth - leftPanelWidth;
       const deltaX = e.clientX - dragStartX;
       const deltaPercentage = (deltaX / containerWidth) * 100;
       const newWidth = Math.min(Math.max(dragStartWidth + deltaPercentage, 30), 80); // Min 30%, Max 80%
