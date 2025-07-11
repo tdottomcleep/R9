@@ -45,3 +45,4 @@ kiwisolver>=1.4.0
 fonttools>=4.38.0
 packaging>=20.0
 narwhals>=1.46.0
+threadpoolctl>=3.6.0
