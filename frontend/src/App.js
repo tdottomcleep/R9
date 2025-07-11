@@ -851,7 +851,12 @@ const App = () => {
       </div>
 
       {/* Center Panel */}
-      <div className="flex-1 flex flex-col">
+      <div 
+        className="flex flex-col bg-white"
+        style={{ 
+          width: rightPanelOpen ? `${centerPanelWidth}%` : 'calc(100% - 48px)'
+        }}
+      >
         {currentSession ? (
           <>
             <div className="bg-white border-b border-gray-200 p-4">
