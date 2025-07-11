@@ -48,6 +48,48 @@ const App = () => {
     scrollToBottom();
   }, [messages]);
 
+  // Handle panel dragging
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      if (!isDragging) return;
+      
+      const containerWidth = window.innerWidth - (leftPanelOpen ? 320 : 48) - (rightPanelOpen ? 48 : 48);
+      const deltaX = e.clientX - dragStartX;
+      const deltaPercentage = (deltaX / containerWidth) * 100;
+      const newWidth = Math.min(Math.max(dragStartWidth + deltaPercentage, 30), 80); // Min 30%, Max 80%
+      
+      setCenterPanelWidth(newWidth);
+    };
+
+    const handleMouseUp = () => {
+      setIsDragging(false);
+      setDragStartX(0);
+      setDragStartWidth(0);
+      document.body.style.cursor = 'default';
+      document.body.style.userSelect = 'auto';
+    };
+
+    if (isDragging) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      document.body.style.cursor = 'col-resize';
+      document.body.style.userSelect = 'none';
+    }
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+      document.body.style.cursor = 'default';
+      document.body.style.userSelect = 'auto';
+    };
+  }, [isDragging, dragStartX, dragStartWidth, leftPanelOpen, rightPanelOpen]);
+
+  const handleDragStart = (e) => {
+    setIsDragging(true);
+    setDragStartX(e.clientX);
+    setDragStartWidth(centerPanelWidth);
+  };
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
