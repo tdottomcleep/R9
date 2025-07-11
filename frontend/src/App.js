@@ -855,7 +855,9 @@ const App = () => {
       <div 
         className="flex flex-col bg-white"
         style={{ 
-          width: rightPanelOpen ? `${centerPanelWidth}%` : 'calc(100% - 48px)'
+          width: rightPanelOpen 
+            ? `calc(${centerPanelWidth}% - ${leftPanelOpen ? '160px' : '24px'})` 
+            : `calc(100% - ${leftPanelOpen ? '320px' : '48px'} - 48px)`
         }}
       >
         {currentSession ? (
