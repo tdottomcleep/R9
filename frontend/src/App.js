@@ -1111,22 +1111,31 @@ else:
                   {/* Tables */}
                   {section.tables && section.tables.length > 0 && (
                     <div className="mb-4">
-                      <h5 className="text-sm font-medium text-gray-700 mb-2">Tables</h5>
+                      <h5 className="text-sm font-medium text-gray-700 mb-2">Data Tables</h5>
                       <div className="space-y-4">
-                        {section.tables.map((table, tableIndex) => (
-                          <div key={tableIndex} className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-                            <div className="bg-gray-50 px-3 py-2 border-b border-gray-200">
-                              <span className="text-xs font-medium text-gray-600">
-                                {table.title || `Table ${tableIndex + 1}`}
-                              </span>
+                        {section.tables.map((table, tableIndex) => {
+                          // Filter out redundant or confusing table titles
+                          const tableTitle = table.title;
+                          const shouldShowTable = tableTitle && 
+                            !tableTitle.toLowerCase().includes(': df') &&
+                            !tableTitle.toLowerCase().includes('survival analysis: df') &&
+                            tableTitle !== 'df';
+                          
+                          return shouldShowTable ? (
+                            <div key={tableIndex} className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+                              <div className="bg-gray-50 px-3 py-2 border-b border-gray-200">
+                                <span className="text-xs font-medium text-gray-600">
+                                  {table.title.replace(/:\s*df$/i, '').trim()}
+                                </span>
+                              </div>
+                              <div className="p-3 overflow-auto">
+                                <pre className="text-sm text-gray-800 whitespace-pre-wrap">
+                                  {table.content}
+                                </pre>
+                              </div>
                             </div>
-                            <div className="p-3 overflow-auto">
-                              <pre className="text-sm text-gray-800 whitespace-pre-wrap">
-                                {table.content}
-                              </pre>
-                            </div>
-                          </div>
-                        ))}
+                          ) : null;
+                        })}
                       </div>
                     </div>
                   )}
