@@ -1026,10 +1026,7 @@ else:
                 return (
                   <div key={index} className="bg-slate-50 border border-slate-200 rounded-xl p-4 shadow-sm">
                     <div className="prose prose-sm max-w-none">
-                      <div 
-                        className="whitespace-pre-wrap text-sm leading-relaxed text-slate-700"
-                        dangerouslySetInnerHTML={{ __html: section.content.trim() }}
-                      />
+                      <ContentRenderer content={section.content.trim()} />
                     </div>
                   </div>
                 );
