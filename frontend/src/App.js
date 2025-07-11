@@ -1056,9 +1056,11 @@ else:
                             );
                           }
                           return (
-                            <span key={partIndex} className="whitespace-pre-wrap">
-                              {part.content}
-                            </span>
+                            <span 
+                              key={partIndex} 
+                              className="whitespace-pre-wrap"
+                              dangerouslySetInnerHTML={{ __html: part.content }}
+                            />
                           );
                         })}
                       </div>
