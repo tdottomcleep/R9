@@ -374,7 +374,8 @@ const App = () => {
     );
   };
 
-  const JuliusStyleCodeBlock = ({ code, onExecute, sectionTitle = "Code Analysis" }) => {
+  // Enhanced Code Block Component
+  const JuliusStyleCodeBlock = ({ code, onExecute, sectionTitle = "Python Code" }) => {
     const [isExpanded, setIsExpanded] = useState(false);
     const [showLineNumbers, setShowLineNumbers] = useState(true);
     
@@ -383,28 +384,28 @@ const App = () => {
     const hasMoreLines = codeLines.length > 8;
     
     return (
-      <div className="bg-white border border-gray-200 rounded-lg my-3 shadow-sm">
+      <div className="bg-slate-50 border border-slate-200 rounded-xl my-4 shadow-sm overflow-hidden">
         {/* Header */}
-        <div className="bg-gray-50 border-b border-gray-200 px-4 py-3 flex items-center justify-between">
+        <div className="bg-gradient-to-r from-slate-100 to-slate-50 border-b border-slate-200 px-5 py-4 flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-            <h4 className="text-sm font-medium text-gray-700">{sectionTitle}</h4>
-            <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+            <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
+            <h4 className="text-sm font-semibold text-slate-700">{sectionTitle}</h4>
+            <span className="text-xs text-slate-500 bg-slate-200 px-2 py-1 rounded-full">
               {codeLines.length} lines
             </span>
           </div>
           <div className="flex items-center space-x-2">
             <button
               onClick={() => setShowLineNumbers(!showLineNumbers)}
-              className="text-xs text-gray-500 hover:text-gray-700 px-2 py-1 rounded hover:bg-gray-100"
+              className="text-xs text-slate-500 hover:text-slate-700 px-3 py-1.5 rounded-full hover:bg-slate-200 transition-all duration-200"
             >
               {showLineNumbers ? 'Hide' : 'Show'} Lines
             </button>
             <button
               onClick={() => onExecute(code)}
-              className="bg-blue-600 text-white px-3 py-1 rounded text-xs hover:bg-blue-700 transition-colors"
+              className="bg-emerald-600 text-white px-4 py-1.5 rounded-full text-xs hover:bg-emerald-700 transition-all duration-200 shadow-sm hover:shadow-md"
             >
-              Execute
+              ▶ Execute
             </button>
           </div>
         </div>
@@ -412,15 +413,15 @@ const App = () => {
         {/* Code Content */}
         <div className="relative">
           <div 
-            className="overflow-auto text-sm bg-gray-50"
-            style={{ maxHeight: '300px' }}
+            className="overflow-auto text-sm bg-slate-50"
+            style={{ maxHeight: '350px' }}
           >
             <div className="flex">
               {/* Line Numbers */}
               {showLineNumbers && (
-                <div className="bg-gray-100 text-gray-500 px-3 py-2 border-r border-gray-200 select-none">
+                <div className="bg-slate-100 text-slate-500 px-3 py-3 border-r border-slate-200 select-none">
                   {displayLines.map((_, index) => (
-                    <div key={index} className="text-right font-mono text-xs leading-5">
+                    <div key={index} className="text-right font-mono text-xs leading-6">
                       {index + 1}
                     </div>
                   ))}
@@ -428,8 +429,8 @@ const App = () => {
               )}
               
               {/* Code */}
-              <div className="flex-1 px-4 py-2">
-                <pre className="text-gray-800 font-mono text-xs leading-5 whitespace-pre-wrap">
+              <div className="flex-1 px-4 py-3">
+                <pre className="text-slate-800 font-mono text-xs leading-6 whitespace-pre-wrap">
                   {displayLines.join('\n')}
                 </pre>
               </div>
@@ -438,10 +439,10 @@ const App = () => {
           
           {/* Expand/Collapse Button */}
           {hasMoreLines && (
-            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-white to-transparent p-3 text-center">
+            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-slate-50 to-transparent p-3 text-center">
               <button
                 onClick={() => setIsExpanded(!isExpanded)}
-                className="text-blue-600 hover:text-blue-800 text-sm font-medium bg-white border border-gray-300 px-3 py-1 rounded shadow-sm hover:bg-gray-50 transition-colors"
+                className="text-emerald-600 hover:text-emerald-800 text-sm font-medium bg-white border border-slate-300 px-4 py-2 rounded-full shadow-sm hover:bg-slate-50 transition-all duration-200"
               >
                 {isExpanded ? 'Show Less' : `Show ${codeLines.length - 8} More Lines`}
               </button>
@@ -449,6 +450,60 @@ const App = () => {
           )}
         </div>
       </div>
+    );
+  };
+
+  // Enhanced Analysis Block Component
+  const AnalysisBlock = ({ title, children, icon = "📊" }) => {
+    return (
+      <div className="bg-blue-50 border border-blue-200 rounded-xl my-4 shadow-sm overflow-hidden">
+        <div className="bg-gradient-to-r from-blue-100 to-blue-50 border-b border-blue-200 px-5 py-3">
+          <div className="flex items-center space-x-3">
+            <span className="text-sm">{icon}</span>
+            <h4 className="text-sm font-semibold text-blue-800">{title}</h4>
+          </div>
+        </div>
+        <div className="px-5 py-4 text-slate-700">
+          {children}
+        </div>
+      </div>
+    );
+  };
+
+  // Enhanced Suggestion Block Component
+  const SuggestionBlock = ({ title, children, icon = "💡" }) => {
+    return (
+      <div className="bg-amber-50 border border-amber-200 rounded-xl my-4 shadow-sm overflow-hidden">
+        <div className="bg-gradient-to-r from-amber-100 to-amber-50 border-b border-amber-200 px-5 py-3">
+          <div className="flex items-center space-x-3">
+            <span className="text-sm">{icon}</span>
+            <h4 className="text-sm font-semibold text-amber-800">{title}</h4>
+          </div>
+        </div>
+        <div className="px-5 py-4 text-slate-700">
+          {children}
+        </div>
+      </div>
+    );
+  };
+
+  // Clickable Analysis Button Component
+  const AnalysisButton = ({ text, onClick, type = "primary" }) => {
+    const baseClasses = "inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium transition-all duration-200 cursor-pointer hover:shadow-md";
+    const typeClasses = {
+      primary: "bg-blue-600 text-white hover:bg-blue-700",
+      secondary: "bg-slate-200 text-slate-700 hover:bg-slate-300",
+      success: "bg-emerald-600 text-white hover:bg-emerald-700",
+      warning: "bg-amber-600 text-white hover:bg-amber-700"
+    };
+    
+    return (
+      <button
+        onClick={onClick}
+        className={`${baseClasses} ${typeClasses[type]}`}
+      >
+        {text}
+      </button>
     );
   };
 
