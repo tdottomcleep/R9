@@ -1233,9 +1233,7 @@ else:
                                 </span>
                               </div>
                               <div className="p-3 overflow-auto">
-                                <pre className="text-sm text-gray-800 whitespace-pre-wrap">
-                                  {table.content}
-                                </pre>
+                                <TableRenderer content={table.content} title={table.title} />
                               </div>
                             </div>
                           ) : null;
