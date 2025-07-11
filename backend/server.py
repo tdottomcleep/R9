@@ -375,6 +375,14 @@ class JuliusStyleExecutor:
             csv_data = base64.b64decode(self.session_data['file_data']).decode('utf-8')
             self.df = pd.read_csv(io.StringIO(csv_data))
         
+        # Analyze data types for commonly used variables
+        numeric_cols = []
+        categorical_cols = []
+        if self.df is not None:
+            dtypes = self.df.dtypes.to_dict()
+            numeric_cols = [col for col, dtype in dtypes.items() if 'int' in str(dtype) or 'float' in str(dtype)]
+            categorical_cols = [col for col, dtype in dtypes.items() if 'object' in str(dtype)]
+        
         # Setup execution globals
         self.execution_globals = {
             'df': self.df,
@@ -397,7 +405,11 @@ class JuliusStyleExecutor:
             'CoxPHFitter': CoxPHFitter,
             'logrank_test': logrank_test,
             'datetime': datetime,
-            'json': json
+            'json': json,
+            # Add commonly used data analysis variables
+            'numeric_cols': numeric_cols,
+            'categorical_cols': categorical_cols,
+            'columns': list(self.df.columns) if self.df is not None else []
         }
     
     def execute_sectioned_analysis(self, code: str, analysis_title: str = "Statistical Analysis") -> StructuredAnalysisResult:
