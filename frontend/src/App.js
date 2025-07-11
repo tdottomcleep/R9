@@ -521,33 +521,383 @@ const App = () => {
     );
   };
 
+  // Enhanced Message Parser and Renderer
+  const parseAndRenderAIResponse = (content) => {
+    // Clean up markdown formatting
+    const cleanContent = content
+      .replace(/\*\*\*(.*?)\*\*\*/g, '$1')
+      .replace(/\*\*(.*?)\*\*/g, '$1')
+      .replace(/###\s*(.*?)(?=\n|$)/g, '$1')
+      .replace(/##\s*(.*?)(?=\n|$)/g, '$1')
+      .replace(/\*\s*/g, '• ');
+
+    // Split content into sections
+    const sections = [];
+    let currentSection = { type: 'text', content: '' };
+    
+    const lines = cleanContent.split('\n');
+    let inCodeBlock = false;
+    let codeContent = '';
+    
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      
+      // Handle code blocks
+      if (line.startsWith('```python')) {
+        if (currentSection.content.trim()) {
+          sections.push(currentSection);
+        }
+        inCodeBlock = true;
+        codeContent = '';
+        currentSection = { type: 'text', content: '' };
+        continue;
+      }
+      
+      if (line.startsWith('```') && inCodeBlock) {
+        sections.push({ type: 'code', content: codeContent, title: 'Python Code' });
+        inCodeBlock = false;
+        codeContent = '';
+        currentSection = { type: 'text', content: '' };
+        continue;
+      }
+      
+      if (inCodeBlock) {
+        codeContent += line + '\n';
+        continue;
+      }
+      
+      // Detect analysis/suggestion patterns
+      if (line.toLowerCase().includes('analysis') || 
+          line.toLowerCase().includes('describe') ||
+          line.toLowerCase().includes('summary') ||
+          line.toLowerCase().includes('overview')) {
+        if (currentSection.content.trim()) {
+          sections.push(currentSection);
+        }
+        currentSection = { type: 'analysis', content: line + '\n', title: 'Data Analysis' };
+        continue;
+      }
+      
+      if (line.toLowerCase().includes('suggest') || 
+          line.toLowerCase().includes('recommend') ||
+          line.toLowerCase().includes('you can') ||
+          line.toLowerCase().includes('would you like')) {
+        if (currentSection.content.trim()) {
+          sections.push(currentSection);
+        }
+        currentSection = { type: 'suggestion', content: line + '\n', title: 'Suggestions' };
+        continue;
+      }
+      
+      currentSection.content += line + '\n';
+    }
+    
+    if (currentSection.content.trim()) {
+      sections.push(currentSection);
+    }
+    
+    return sections;
+  };
+
+  // Enhanced suggestion text processor
+  const processSuggestionText = (text) => {
+    // Define statistical test patterns
+    const testPatterns = [
+      { pattern: /\b(paired t-test|paired t test)\b/gi, name: 'Paired T-Test' },
+      { pattern: /\b(unpaired t-test|unpaired t test|independent t-test)\b/gi, name: 'Independent T-Test' },
+      { pattern: /\b(anova|one-way anova|ANOVA)\b/gi, name: 'ANOVA' },
+      { pattern: /\b(chi-square|chi square|χ²)\b/gi, name: 'Chi-Square Test' },
+      { pattern: /\b(correlation|pearson correlation|spearman correlation)\b/gi, name: 'Correlation Analysis' },
+      { pattern: /\b(regression|linear regression|logistic regression)\b/gi, name: 'Regression Analysis' },
+      { pattern: /\b(mann-whitney|mann whitney|wilcoxon)\b/gi, name: 'Mann-Whitney Test' },
+      { pattern: /\b(kruskal-wallis|kruskal wallis)\b/gi, name: 'Kruskal-Wallis Test' },
+      { pattern: /\b(fisher's exact|fisher exact)\b/gi, name: "Fisher's Exact Test" },
+      { pattern: /\b(two-way anova|two way anova)\b/gi, name: 'Two-Way ANOVA' }
+    ];
+    
+    // Split text into parts and identify clickable elements
+    const parts = [];
+    let lastIndex = 0;
+    let matches = [];
+    
+    // Find all matches
+    testPatterns.forEach(({ pattern, name }) => {
+      const regex = new RegExp(pattern.source, pattern.flags);
+      let match;
+      while ((match = regex.exec(text)) !== null) {
+        matches.push({
+          start: match.index,
+          end: match.index + match[0].length,
+          text: match[0],
+          name: name
+        });
+      }
+    });
+    
+    // Sort matches by position
+    matches.sort((a, b) => a.start - b.start);
+    
+    // Build parts array
+    matches.forEach(match => {
+      // Add text before match
+      if (match.start > lastIndex) {
+        parts.push({
+          type: 'text',
+          content: text.slice(lastIndex, match.start)
+        });
+      }
+      
+      // Add clickable match
+      parts.push({
+        type: 'button',
+        content: match.text,
+        name: match.name,
+        action: () => handleAnalysisClick(match.name)
+      });
+      
+      lastIndex = match.end;
+    });
+    
+    // Add remaining text
+    if (lastIndex < text.length) {
+      parts.push({
+        type: 'text',
+        content: text.slice(lastIndex)
+      });
+    }
+    
+    return parts.length > 0 ? parts : [{ type: 'text', content: text }];
+  };
+
+  // Handle analysis button clicks
+  const handleAnalysisClick = (analysisType) => {
+    const analysisTemplates = {
+      'Paired T-Test': `# Paired T-Test Analysis
+# Comparing measurements from the same subjects
+
+import scipy.stats as stats
+import pandas as pd
+
+# Assuming your data has 'before' and 'after' columns
+# Replace with your actual column names
+before = df['before_measurement']
+after = df['after_measurement']
+
+# Perform paired t-test
+t_stat, p_value = stats.ttest_rel(before, after)
+
+print(f"Paired T-Test Results:")
+print(f"T-statistic: {t_stat:.4f}")
+print(f"P-value: {p_value:.4f}")
+
+# Interpretation
+if p_value < 0.05:
+    print("Result: Significant difference (p < 0.05)")
+else:
+    print("Result: No significant difference (p >= 0.05)")`,
+      
+      'Independent T-Test': `# Independent T-Test Analysis
+# Comparing two independent groups
+
+import scipy.stats as stats
+import pandas as pd
+
+# Assuming your data has a grouping variable
+# Replace with your actual column names
+group1 = df[df['group'] == 'Group1']['measurement']
+group2 = df[df['group'] == 'Group2']['measurement']
+
+# Perform independent t-test
+t_stat, p_value = stats.ttest_ind(group1, group2)
+
+print(f"Independent T-Test Results:")
+print(f"T-statistic: {t_stat:.4f}")
+print(f"P-value: {p_value:.4f}")
+
+# Interpretation
+if p_value < 0.05:
+    print("Result: Significant difference between groups (p < 0.05)")
+else:
+    print("Result: No significant difference between groups (p >= 0.05)")`,
+      
+      'ANOVA': `# One-Way ANOVA Analysis
+# Comparing means across multiple groups
+
+import scipy.stats as stats
+import pandas as pd
+
+# Assuming your data has a grouping variable
+# Replace with your actual column names
+groups = []
+for group_name in df['group'].unique():
+    groups.append(df[df['group'] == group_name]['measurement'])
+
+# Perform one-way ANOVA
+f_stat, p_value = stats.f_oneway(*groups)
+
+print(f"One-Way ANOVA Results:")
+print(f"F-statistic: {f_stat:.4f}")
+print(f"P-value: {p_value:.4f}")
+
+# Interpretation
+if p_value < 0.05:
+    print("Result: Significant difference between groups (p < 0.05)")
+    print("Post-hoc tests recommended to identify specific group differences")
+else:
+    print("Result: No significant difference between groups (p >= 0.05)")`,
+      
+      'Chi-Square Test': `# Chi-Square Test Analysis
+# Testing independence between categorical variables
+
+import scipy.stats as stats
+import pandas as pd
+
+# Create contingency table
+# Replace with your actual column names
+contingency_table = pd.crosstab(df['variable1'], df['variable2'])
+
+print("Contingency Table:")
+print(contingency_table)
+
+# Perform chi-square test
+chi2, p_value, dof, expected = stats.chi2_contingency(contingency_table)
+
+print(f"\\nChi-Square Test Results:")
+print(f"Chi-square statistic: {chi2:.4f}")
+print(f"P-value: {p_value:.4f}")
+print(f"Degrees of freedom: {dof}")
+
+# Interpretation
+if p_value < 0.05:
+    print("Result: Significant association between variables (p < 0.05)")
+else:
+    print("Result: No significant association between variables (p >= 0.05)")`,
+      
+      'Correlation Analysis': `# Correlation Analysis
+# Examining relationships between continuous variables
+
+import scipy.stats as stats
+import pandas as pd
+import matplotlib.pyplot as plt
+
+# Replace with your actual column names
+var1 = df['variable1']
+var2 = df['variable2']
+
+# Calculate Pearson correlation
+pearson_r, pearson_p = stats.pearsonr(var1, var2)
+
+# Calculate Spearman correlation
+spearman_r, spearman_p = stats.spearmanr(var1, var2)
+
+print(f"Correlation Analysis Results:")
+print(f"Pearson correlation: r = {pearson_r:.4f}, p = {pearson_p:.4f}")
+print(f"Spearman correlation: ρ = {spearman_r:.4f}, p = {spearman_p:.4f}")
+
+# Create scatter plot
+plt.figure(figsize=(8, 6))
+plt.scatter(var1, var2, alpha=0.6)
+plt.xlabel('Variable 1')
+plt.ylabel('Variable 2')
+plt.title('Scatter Plot with Correlation')
+plt.show()
+
+# Interpretation
+if pearson_p < 0.05:
+    print("Result: Significant correlation detected (p < 0.05)")
+else:
+    print("Result: No significant correlation (p >= 0.05)")`
+    };
+    
+    const code = analysisTemplates[analysisType];
+    if (code) {
+      handleExecuteCode(code);
+    }
+  };
+
   const MessageRenderer = ({ message }) => {
     const isUser = message.role === 'user';
     const content = message.content;
     
-    // Simple code block detection
-    const codeBlocks = content.match(/```python\n([\s\S]*?)```/g);
+    if (isUser) {
+      return (
+        <div className="flex justify-end mb-4">
+          <div className="max-w-3xl bg-blue-600 text-white p-4 rounded-2xl shadow-sm">
+            <p className="whitespace-pre-wrap text-sm leading-relaxed">{content}</p>
+          </div>
+        </div>
+      );
+    }
+    
+    // Parse AI response into sections
+    const sections = parseAndRenderAIResponse(content);
     
     return (
-      <div className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-4`}>
-        <div className={`max-w-3xl p-3 rounded-lg ${
-          isUser 
-            ? 'bg-blue-600 text-white' 
-            : 'bg-gray-100 text-gray-800'
-        }`}>
-          {codeBlocks ? (
-            <div>
-              {content.split(/```python\n([\s\S]*?)```/).map((part, index) => {
-                if (index % 2 === 0) {
-                  return <p key={index} className="whitespace-pre-wrap">{part}</p>;
-                } else {
-                  return <JuliusStyleCodeBlock key={index} code={part} onExecute={handleExecuteCode} sectionTitle="Python Code" />;
-                }
-              })}
-            </div>
-          ) : (
-            <p className="whitespace-pre-wrap">{content}</p>
-          )}
+      <div className="flex justify-start mb-6">
+        <div className="max-w-4xl w-full space-y-3">
+          {sections.map((section, index) => {
+            switch (section.type) {
+              case 'code':
+                return (
+                  <JuliusStyleCodeBlock 
+                    key={index} 
+                    code={section.content.trim()} 
+                    onExecute={handleExecuteCode} 
+                    sectionTitle={section.title}
+                  />
+                );
+              
+              case 'analysis':
+                return (
+                  <AnalysisBlock key={index} title={section.title} icon="📊">
+                    <div className="prose prose-sm max-w-none">
+                      <p className="whitespace-pre-wrap text-sm leading-relaxed">
+                        {section.content.trim()}
+                      </p>
+                    </div>
+                  </AnalysisBlock>
+                );
+              
+              case 'suggestion':
+                const suggestionParts = processSuggestionText(section.content);
+                return (
+                  <SuggestionBlock key={index} title={section.title} icon="💡">
+                    <div className="prose prose-sm max-w-none">
+                      <div className="text-sm leading-relaxed">
+                        {suggestionParts.map((part, partIndex) => {
+                          if (part.type === 'button') {
+                            return (
+                              <AnalysisButton
+                                key={partIndex}
+                                text={part.content}
+                                onClick={part.action}
+                                type="primary"
+                              />
+                            );
+                          }
+                          return (
+                            <span key={partIndex} className="whitespace-pre-wrap">
+                              {part.content}
+                            </span>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </SuggestionBlock>
+                );
+              
+              default:
+                return (
+                  <div key={index} className="bg-slate-50 border border-slate-200 rounded-xl p-4 shadow-sm">
+                    <div className="prose prose-sm max-w-none">
+                      <p className="whitespace-pre-wrap text-sm leading-relaxed text-slate-700">
+                        {section.content.trim()}
+                      </p>
+                    </div>
+                  </div>
+                );
+            }
+          })}
         </div>
       </div>
     );
