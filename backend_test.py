@@ -2359,5 +2359,5 @@ print("Testing error recovery")
 
 if __name__ == "__main__":
     tester = BackendTester()
-    # Run Julius AI Phase 1 tests as requested
-    results = tester.run_julius_ai_phase1_tests()
+    # Run review-focused tests as requested in the review
+    results = tester.run_review_focused_tests()
