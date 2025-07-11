@@ -109,15 +109,15 @@ const App = () => {
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i].trim();
         
-        // Skip separator lines
-        if (line.match(/^[-=\s]+$/)) continue;
+        // Skip separator lines (lines with only dashes, equals, or spaces)
+        if (line.match(/^[-=\s|]+$/)) continue;
         
         // Try to split the line into columns
         let parts = [];
         
         // Handle different column separators
         if (line.includes('|')) {
-          // Pipe-separated
+          // Pipe-separated - handle cases like "| Variable | Count | Mean |"
           parts = line.split('|').map(p => p.trim()).filter(p => p);
         } else if (line.includes('\t')) {
           // Tab-separated
@@ -133,8 +133,17 @@ const App = () => {
             // First data row becomes headers
             headers = parts;
           } else {
-            // Add as data row
-            rows.push(parts);
+            // Add as data row, ensuring it matches header length
+            if (parts.length >= headers.length) {
+              rows.push(parts.slice(0, headers.length));
+            } else {
+              // Pad with empty cells if needed
+              const paddedRow = [...parts];
+              while (paddedRow.length < headers.length) {
+                paddedRow.push('');
+              }
+              rows.push(paddedRow);
+            }
           }
         }
       }
@@ -142,20 +151,42 @@ const App = () => {
       // If we have very few rows, try alternative parsing
       if (rows.length < 1 && headers.length > 0) {
         // Maybe the first line wasn't actually headers
-        const allLines = lines.filter(line => !line.match(/^[-=\s]+$/));
+        const allLines = lines.filter(line => !line.match(/^[-=\s|]+$/));
         if (allLines.length > 0) {
           // Use first line as headers if it looks like column names
           const firstLine = allLines[0];
           if (firstLine.toLowerCase().includes('mean') || 
               firstLine.toLowerCase().includes('std') ||
               firstLine.toLowerCase().includes('count') ||
+              firstLine.toLowerCase().includes('variable') ||
               firstLine.toLowerCase().includes('age') ||
               firstLine.toLowerCase().includes('gender')) {
-            headers = firstLine.split(/\s{2,}/).map(h => h.trim()).filter(h => h);
+            
+            if (firstLine.includes('|')) {
+              headers = firstLine.split('|').map(h => h.trim()).filter(h => h);
+            } else {
+              headers = firstLine.split(/\s{2,}/).map(h => h.trim()).filter(h => h);
+            }
+            
             for (let i = 1; i < allLines.length; i++) {
-              const rowData = allLines[i].split(/\s{2,}/).map(d => d.trim()).filter(d => d);
+              let rowData;
+              if (allLines[i].includes('|')) {
+                rowData = allLines[i].split('|').map(d => d.trim()).filter(d => d);
+              } else {
+                rowData = allLines[i].split(/\s{2,}/).map(d => d.trim()).filter(d => d);
+              }
+              
               if (rowData.length > 0) {
-                rows.push(rowData);
+                // Ensure row matches header length
+                if (rowData.length >= headers.length) {
+                  rows.push(rowData.slice(0, headers.length));
+                } else {
+                  const paddedRow = [...rowData];
+                  while (paddedRow.length < headers.length) {
+                    paddedRow.push('');
+                  }
+                  rows.push(paddedRow);
+                }
               }
             }
           }
