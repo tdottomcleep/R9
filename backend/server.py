@@ -1068,6 +1068,11 @@ async def execute_python_code(session_id: str, request: PythonExecutionRequest):
         csv_data = base64.b64decode(session['file_data']).decode('utf-8')
         df = pd.read_csv(io.StringIO(csv_data))
         
+        # Analyze data types for commonly used variables
+        dtypes = df.dtypes.to_dict()
+        numeric_cols = [col for col, dtype in dtypes.items() if 'int' in str(dtype) or 'float' in str(dtype)]
+        categorical_cols = [col for col, dtype in dtypes.items() if 'object' in str(dtype)]
+        
         # Prepare execution environment
         execution_globals = {
             'df': df,
@@ -1090,7 +1095,11 @@ async def execute_python_code(session_id: str, request: PythonExecutionRequest):
             'CoxPHFitter': CoxPHFitter,
             'logrank_test': logrank_test,
             'datetime': datetime,
-            'json': json
+            'json': json,
+            # Add commonly used data analysis variables
+            'numeric_cols': numeric_cols,
+            'categorical_cols': categorical_cols,
+            'columns': list(df.columns)
         }
         
         # Capture output
