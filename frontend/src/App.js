@@ -237,13 +237,17 @@ const App = () => {
 
   // Enhanced Content Renderer with Table Detection
   const ContentRenderer = ({ content }) => {
-    // Enhanced table detection
+    // Enhanced table detection - be more aggressive in detecting tables
     const hasTable = content.includes('|') || 
                     (content.includes('  ') && content.split('\n').length > 2) ||
                     /\s+\d+\.\d+\s+\d+\.\d+/.test(content) ||
-                    content.includes('mean') && content.includes('std') ||
-                    content.includes('count') && content.includes('unique') ||
-                    content.match(/\s+\d+\s+\d+\s+\d+/);
+                    (content.includes('mean') && content.includes('std')) ||
+                    (content.includes('count') && content.includes('unique')) ||
+                    content.match(/\s+\d+\s+\d+\s+\d+/) ||
+                    content.toLowerCase().includes('variable') ||
+                    content.includes('---') ||
+                    content.includes('===') ||
+                    /\|\s*\w+\s*\|/.test(content);  // Pipe-separated format
     
     if (hasTable) {
       return <TableRenderer content={content} title="Data Table" />;
