@@ -199,6 +199,25 @@ const App = () => {
     );
   };
 
+  // Enhanced Content Renderer with Table Detection
+  const ContentRenderer = ({ content }) => {
+    // Check if content contains table-like structures
+    const hasTable = content.includes('|') || 
+                    (content.includes('  ') && content.includes('\n')) ||
+                    /\s+\d+\s+\d+/.test(content);
+    
+    if (hasTable) {
+      return <TableRenderer content={content} title="Data Table" />;
+    }
+    
+    return (
+      <div 
+        className="whitespace-pre-wrap text-sm leading-relaxed text-slate-700"
+        dangerouslySetInnerHTML={{ __html: content.trim() }}
+      />
+    );
+  };
+
   const fetchSessions = async () => {
     try {
       console.log('Fetching sessions from:', `${API}/sessions`);
