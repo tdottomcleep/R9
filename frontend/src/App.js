@@ -206,10 +206,13 @@ const App = () => {
 
   // Enhanced Content Renderer with Table Detection
   const ContentRenderer = ({ content }) => {
-    // Check if content contains table-like structures
+    // Enhanced table detection
     const hasTable = content.includes('|') || 
-                    (content.includes('  ') && content.includes('\n')) ||
-                    /\s+\d+\s+\d+/.test(content);
+                    (content.includes('  ') && content.split('\n').length > 2) ||
+                    /\s+\d+\.\d+\s+\d+\.\d+/.test(content) ||
+                    content.includes('mean') && content.includes('std') ||
+                    content.includes('count') && content.includes('unique') ||
+                    content.match(/\s+\d+\s+\d+\s+\d+/);
     
     if (hasTable) {
       return <TableRenderer content={content} title="Data Table" />;
