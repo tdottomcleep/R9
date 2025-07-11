@@ -509,14 +509,21 @@ const App = () => {
 
   const CodeBlock = ({ code, onExecute }) => {
     return (
-      <div className="bg-gray-900 text-green-400 p-3 rounded-lg my-2 relative">
-        <pre className="text-sm overflow-x-auto">{code}</pre>
-        <button
-          onClick={() => onExecute(code)}
-          className="absolute top-2 right-2 bg-blue-600 text-white px-2 py-1 rounded text-xs hover:bg-blue-700"
-        >
-          Execute
-        </button>
+      <div className="bg-slate-900 border border-slate-700 rounded-xl my-3 shadow-sm overflow-hidden">
+        <div className="flex justify-between items-center p-3 bg-slate-800 border-b border-slate-700">
+          <span className="text-slate-300 text-xs font-medium">Code</span>
+          <button
+            onClick={() => onExecute(code)}
+            className="bg-emerald-600 text-white px-3 py-1.5 rounded-full text-xs hover:bg-emerald-700 transition-all duration-200"
+          >
+            ▶ Execute
+          </button>
+        </div>
+        <div className="p-4">
+          <pre className="text-emerald-400 text-sm overflow-x-auto font-mono leading-relaxed">
+            {code}
+          </pre>
+        </div>
       </div>
     );
   };
