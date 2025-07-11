@@ -100,55 +100,60 @@ const App = () => {
     const parseTableContent = (content) => {
       const lines = content.split('\n').filter(line => line.trim());
       
-      // Try to detect if it's a pandas DataFrame output
       if (lines.length < 2) return null;
       
-      // Look for pandas-style table (with index and columns)
       const rows = [];
       let headers = [];
       
-      // Find the header row (usually the first non-empty line)
+      // Enhanced pandas DataFrame detection
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i].trim();
-        if (line && !line.startsWith('-') && !line.startsWith('=')) {
-          // Check if this looks like a data row
-          const parts = line.split(/\s{2,}|\t/).filter(p => p.trim());
-          if (parts.length > 1) {
-            if (headers.length === 0) {
-              // First data row - extract headers
-              headers = parts;
-            } else {
-              // Data row
-              rows.push(parts);
-            }
+        
+        // Skip separator lines
+        if (line.match(/^[-=\s]+$/)) continue;
+        
+        // Try to split the line into columns
+        let parts = [];
+        
+        // Handle different column separators
+        if (line.includes('|')) {
+          // Pipe-separated
+          parts = line.split('|').map(p => p.trim()).filter(p => p);
+        } else if (line.includes('\t')) {
+          // Tab-separated
+          parts = line.split('\t').map(p => p.trim()).filter(p => p);
+        } else {
+          // Space-separated (pandas default)
+          // Split by multiple spaces but preserve single spaces within values
+          parts = line.split(/\s{2,}/).map(p => p.trim()).filter(p => p);
+        }
+        
+        if (parts.length > 1) {
+          if (headers.length === 0) {
+            // First data row becomes headers
+            headers = parts;
+          } else {
+            // Add as data row
+            rows.push(parts);
           }
         }
       }
       
-      // If we didn't find proper headers, try a different approach
-      if (headers.length === 0) {
-        // Try to parse as pipe-separated or whitespace-separated
-        const tableLines = lines.filter(line => 
-          line.includes('|') || 
-          (line.trim() && !line.startsWith('-') && !line.startsWith('='))
-        );
-        
-        if (tableLines.length > 0) {
-          const firstLine = tableLines[0];
-          if (firstLine.includes('|')) {
-            // Pipe-separated table
-            headers = firstLine.split('|').map(h => h.trim()).filter(h => h);
-            for (let i = 1; i < tableLines.length; i++) {
-              const rowData = tableLines[i].split('|').map(d => d.trim()).filter(d => d);
-              if (rowData.length > 0) {
-                rows.push(rowData);
-              }
-            }
-          } else {
-            // Whitespace-separated table
+      // If we have very few rows, try alternative parsing
+      if (rows.length < 1 && headers.length > 0) {
+        // Maybe the first line wasn't actually headers
+        const allLines = lines.filter(line => !line.match(/^[-=\s]+$/));
+        if (allLines.length > 0) {
+          // Use first line as headers if it looks like column names
+          const firstLine = allLines[0];
+          if (firstLine.toLowerCase().includes('mean') || 
+              firstLine.toLowerCase().includes('std') ||
+              firstLine.toLowerCase().includes('count') ||
+              firstLine.toLowerCase().includes('age') ||
+              firstLine.toLowerCase().includes('gender')) {
             headers = firstLine.split(/\s{2,}/).map(h => h.trim()).filter(h => h);
-            for (let i = 1; i < tableLines.length; i++) {
-              const rowData = tableLines[i].split(/\s{2,}/).map(d => d.trim()).filter(d => d);
+            for (let i = 1; i < allLines.length; i++) {
+              const rowData = allLines[i].split(/\s{2,}/).map(d => d.trim()).filter(d => d);
               if (rowData.length > 0) {
                 rows.push(rowData);
               }
@@ -162,10 +167,10 @@ const App = () => {
 
     const tableData = parseTableContent(content);
     
-    if (!tableData || tableData.headers.length === 0) {
+    if (!tableData || tableData.headers.length === 0 || tableData.rows.length === 0) {
       // Fallback to pre-formatted text if parsing fails
       return (
-        <pre className="text-sm text-gray-800 whitespace-pre-wrap font-mono">
+        <pre className="text-sm text-gray-800 whitespace-pre-wrap font-mono bg-gray-50 p-3 rounded border">
           {content}
         </pre>
       );
@@ -173,7 +178,7 @@ const App = () => {
     
     return (
       <div className="overflow-x-auto">
-        <table className="min-w-full border border-gray-200">
+        <table className="min-w-full border border-gray-200 bg-white">
           <thead className="bg-gray-50">
             <tr>
               {tableData.headers.map((header, index) => (
