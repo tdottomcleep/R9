@@ -937,8 +937,23 @@ const App = () => {
         )}
       </div>
 
+      {/* Draggable Divider */}
+      {rightPanelOpen && (
+        <div
+          className="w-1 bg-gray-300 hover:bg-blue-500 cursor-col-resize transition-colors duration-200 relative group"
+          onMouseDown={handleDragStart}
+        >
+          <div className="absolute inset-y-0 -left-1 -right-1 group-hover:bg-blue-500 group-hover:bg-opacity-20"></div>
+        </div>
+      )}
+
       {/* Right Panel */}
-      <div className={`${rightPanelOpen ? 'w-96' : 'w-12'} transition-all duration-300 bg-white shadow-lg flex flex-col`}>
+      <div 
+        className={`${rightPanelOpen ? 'flex-1' : 'w-12'} transition-all duration-300 bg-white shadow-lg flex flex-col`}
+        style={{ 
+          width: rightPanelOpen ? `${100 - centerPanelWidth}%` : '48px'
+        }}
+      >
         <div className="p-4 border-b border-gray-200 flex items-center justify-between">
           <h2 className={`font-semibold text-gray-800 ${rightPanelOpen ? 'block' : 'hidden'}`}>
             Results & Analysis
