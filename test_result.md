@@ -492,10 +492,11 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Julius AI-Style Sectioned Execution"
-    - "Structured Analysis Retrieval"
-    - "Analysis Classification System"
-  stuck_tasks: []
+    - "Chat Interface with LLM"
+    - "Enhanced Chat Interface Organization"
+  stuck_tasks:
+    - "Chat Interface with LLM"
+    - "Enhanced Chat Interface Organization"
   test_all: false
   test_priority: "high_first"
 
