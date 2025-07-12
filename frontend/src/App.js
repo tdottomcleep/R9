@@ -780,6 +780,10 @@ const App = () => {
 
   // Enhanced suggestion text processor
   const processSuggestionText = (text) => {
+    // First, let's work with the text before HTML conversion to avoid breaking HTML tags
+    // Remove HTML tags temporarily to find patterns, then restore them
+    const plainText = text.replace(/<[^>]*>/g, '');
+    
     // Define statistical test patterns
     const testPatterns = [
       { pattern: /\b(paired t-test|paired t test)\b/gi, name: 'Paired T-Test' },
@@ -794,16 +798,30 @@ const App = () => {
       { pattern: /\b(two-way anova|two way anova)\b/gi, name: 'Two-Way ANOVA' }
     ];
     
+    // Check if any patterns exist in the plain text
+    let hasPatterns = false;
+    for (const { pattern } of testPatterns) {
+      if (pattern.test(plainText)) {
+        hasPatterns = true;
+        break;
+      }
+    }
+    
+    // If no analysis patterns found, return the original HTML text as is
+    if (!hasPatterns) {
+      return [{ type: 'text', content: text }];
+    }
+    
     // Split text into parts and identify clickable elements
     const parts = [];
     let lastIndex = 0;
     let matches = [];
     
-    // Find all matches
+    // Find all matches in the plain text
     testPatterns.forEach(({ pattern, name }) => {
       const regex = new RegExp(pattern.source, pattern.flags);
       let match;
-      while ((match = regex.exec(text)) !== null) {
+      while ((match = regex.exec(plainText)) !== null) {
         matches.push({
           start: match.index,
           end: match.index + match[0].length,
@@ -816,13 +834,16 @@ const App = () => {
     // Sort matches by position
     matches.sort((a, b) => a.start - b.start);
     
-    // Build parts array
+    // Build parts array using original HTML text but with positions from plain text
     matches.forEach(match => {
       // Add text before match
       if (match.start > lastIndex) {
+        const beforeText = plainText.slice(lastIndex, match.start);
+        // Find this text in the original HTML and extract it
+        const htmlBefore = findTextInHTML(text, beforeText, lastIndex);
         parts.push({
           type: 'text',
-          content: text.slice(lastIndex, match.start)
+          content: htmlBefore
         });
       }
       
@@ -838,14 +859,32 @@ const App = () => {
     });
     
     // Add remaining text
-    if (lastIndex < text.length) {
+    if (lastIndex < plainText.length) {
+      const remainingText = plainText.slice(lastIndex);
+      const htmlRemaining = findTextInHTML(text, remainingText, lastIndex);
       parts.push({
         type: 'text',
-        content: text.slice(lastIndex)
+        content: htmlRemaining
       });
     }
     
     return parts.length > 0 ? parts : [{ type: 'text', content: text }];
+  };
+  
+  // Helper function to find text in HTML while preserving HTML tags
+  const findTextInHTML = (htmlText, targetText, startPos) => {
+    // For simplicity, if the text has HTML tags, just return the target text with basic HTML
+    // This is a simple approach - for more complex cases, a proper HTML parser would be needed
+    if (htmlText.includes('<strong>') || htmlText.includes('<')) {
+      // Return the text with basic markdown converted to HTML
+      return targetText
+        .replace(/\*\*\*(.*?)\*\*\*/g, '<strong>$1</strong>')
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/###\s*(.*?)(?=\n|$)/g, '<strong>$1</strong>')
+        .replace(/##\s*(.*?)(?=\n|$)/g, '<strong>$1</strong>')
+        .replace(/#{1,6}\s*(.*?)(?=\n|$)/g, '<strong>$1</strong>');
+    }
+    return targetText;
   };
 
   // Handle analysis button clicks
