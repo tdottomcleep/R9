@@ -1039,35 +1039,53 @@ else:
                 );
               
               case 'suggestion':
-                // For suggestions, render the HTML content directly first, then process for buttons
-                const suggestionParts = processSuggestionText(section.content);
-                return (
-                  <SuggestionBlock key={index} title={section.title} icon="💡">
-                    <div className="prose prose-sm max-w-none">
-                      <div className="text-sm leading-relaxed">
-                        {suggestionParts.map((part, partIndex) => {
-                          if (part.type === 'button') {
+                // For suggestions with clickable analysis buttons, we need special handling
+                // First check if this suggestion contains any statistical test patterns
+                const hasAnalysisPatterns = /\b(t-test|anova|chi-square|correlation|regression|mann-whitney|kruskal-wallis|fisher|statistical|analysis)\b/gi.test(section.content);
+                
+                if (hasAnalysisPatterns) {
+                  // Process for clickable buttons but preserve HTML
+                  const suggestionParts = processSuggestionText(section.content);
+                  return (
+                    <SuggestionBlock key={index} title={section.title} icon="💡">
+                      <div className="prose prose-sm max-w-none">
+                        <div className="text-sm leading-relaxed">
+                          {suggestionParts.map((part, partIndex) => {
+                            if (part.type === 'button') {
+                              return (
+                                <AnalysisButton
+                                  key={partIndex}
+                                  text={part.content}
+                                  onClick={part.action}
+                                  type="primary"
+                                />
+                              );
+                            }
                             return (
-                              <AnalysisButton
-                                key={partIndex}
-                                text={part.content}
-                                onClick={part.action}
-                                type="primary"
+                              <span 
+                                key={partIndex} 
+                                className="whitespace-pre-wrap"
+                                dangerouslySetInnerHTML={{ __html: part.content }}
                               />
                             );
-                          }
-                          return (
-                            <span 
-                              key={partIndex} 
-                              className="whitespace-pre-wrap"
-                              dangerouslySetInnerHTML={{ __html: part.content }}
-                            />
-                          );
-                        })}
+                          })}
+                        </div>
                       </div>
-                    </div>
-                  </SuggestionBlock>
-                );
+                    </SuggestionBlock>
+                  );
+                } else {
+                  // Simple HTML rendering for suggestions without analysis patterns
+                  return (
+                    <SuggestionBlock key={index} title={section.title} icon="💡">
+                      <div className="prose prose-sm max-w-none">
+                        <div 
+                          className="text-sm leading-relaxed whitespace-pre-wrap"
+                          dangerouslySetInnerHTML={{ __html: section.content.trim() }}
+                        />
+                      </div>
+                    </SuggestionBlock>
+                  );
+                }
               
               default:
                 return (
