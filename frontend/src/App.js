@@ -1039,6 +1039,7 @@ else:
                 );
               
               case 'suggestion':
+                // For suggestions, render the HTML content directly first, then process for buttons
                 const suggestionParts = processSuggestionText(section.content);
                 return (
                   <SuggestionBlock key={index} title={section.title} icon="💡">
